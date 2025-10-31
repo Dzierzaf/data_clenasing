@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Databricks DLT Generator - Unified Edition</title>
+    <!-- React & Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- PapaParse für CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #1a202c;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            margin: 10px 0 0 0;
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        /* Navigation */
+        .navigation {
+            display: flex;
+            background: #f7fafc;
+            border-bottom: 2px solid #e2e8f0;
+            overflow-x: auto;
+        }
+
+        .nav-button {
+            padding: 20px 30px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #4a5568;
+            transition: all 0.2s;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .nav-button:hover {
+            background: #edf2f7;
+            color: #2d3748;
+        }
+
+        .nav-button.active {
+            color: #3182ce;
+            background: white;
+        }
+
+        .nav-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #3182ce;
+        }
+
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Pages */
+        .page {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 60px;
+            text-align: center;
+            background: #f7fafc;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-bottom: 30px;
+        }
+
+        .upload-area:hover {
+            border-color: #3182ce;
+            background: #ebf8ff;
+        }
+
+        .upload-area.has-file {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #a0aec0;
+        }
+
+        .upload-button {
+            background: #3182ce;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .upload-button:hover {
+            background: #2c5aa0;
+            transform: translateY(-1px);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Git Configuration Section */
+        .git-config-section {
+            background: #f8f9fa;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 24px;
+        }
+
+        .git-config-section h3 {
+            margin: 0 0 20px 0;
+            color: #2d3748;
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #3182ce;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2c5aa0;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Template Status */
+        .template-status {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .template-status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .template-status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .template-status.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .template-list {
+            margin-top: 12px;
+        }
+
+        .template-item {
+            padding: 8px 12px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+        }
+
+        /* Table Configuration */
+        .table-section {
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .table-section:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: white;
+        }
+
+        .table-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .table-content {
+            padding: 24px;
+        }
+
+        /* Column List */
+        .column-list {
+            margin-top: 24px;
+        }
+
+        .column-list h3 {
+            margin-bottom: 16px;
+            color: #2d3748;
+        }
+
+        .column-item {
+            display: grid;
+            grid-template-columns: 200px 1fr 150px 120px;
+            gap: 20px;
+            padding: 16px;
+            background: #f7fafc;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .column-item:hover {
+            background: #edf2f7;
+        }
+
+        .column-original {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: #2d3748;
+            color: #48bb78;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .column-input {
+            display: flex;
+            align-items: center;
+        }
+
+        .column-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .column-input input:focus {
+            outline: none;
+            border-color: #3182ce;
+        }
+
+        .column-type {
+            display: flex;
+            align-items: center;
+        }
+
+        .column-type select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        /* Expectations Section */
+        .expectations-section {
+            margin-top: 24px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .expectations-section h3 {
+            margin: 0 0 16px 0;
+            color: #2d3748;
+        }
+
+        .expectation-item {
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .expectation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .expectation-column {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .expectation-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr 120px auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .pattern-helper {
+            position: relative;
+        }
+
+        .pattern-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .btn-remove {
+            background: #fc8181;
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-remove:hover {
+            background: #f56565;
+        }
+
+        .btn-add {
+            background: #48bb78;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        .btn-add:hover {
+            background: #38a169;
+        }
+
+        /* Code Output */
+        .code-output {
+            margin-top: 24px;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .code-header h3 {
+            margin: 0;
+            color: #2d3748;
+        }
+
+        .code-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .code-content {
+            background: #263238;
+            color: #aed581;
+            padding: 24px;
+            border-radius: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.6;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .generate-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 40px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            width: 100%;
+            margin-bottom: 24px;
+            transition: all 0.3s;
+        }
+
+        .generate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .generate-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .summary-card-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #3182ce;
+            margin-bottom: 8px;
+        }
+
+        .summary-card-label {
+            font-size: 14px;
+            color: #718096;
+            font-weight: 500;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: #ebf8ff;
+            border: 2px solid #bee3f8;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+
+        .info-box h4 {
+            margin: 0 0 12px 0;
+            color: #2c5282;
+        }
+
+        .info-box ul {
+            margin: 0;
+            padding-left: 24px;
+            color: #2c5282;
+        }
+
+        .info-box code {
+            background: #bee3f8;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [currentPage, setCurrentPage] = useState('upload');
+            const [csvData, setCsvData] = useState(null);
+            const [fileName, setFileName] = useState('');
+
+            // Git Configuration
+            const [gitConfig, setGitConfig] = useState({
+                repoUrl: localStorage.getItem('git_repo_url') || '',
+                branch: localStorage.getItem('git_branch') || 'main',
+                templates: JSON.parse(localStorage.getItem('git_templates') || '{}')
+            });
+            const [gitStatus, setGitStatus] = useState('');
+            const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+            // Table Configuration
+            const [tableConfig, setTableConfig] = useState({
+                name: '',
+                comment: ''
+            });
+
+            // Columns Configuration
+            const [columns, setColumns] = useState([]);
+
+            // Expectations
+            const [expectations, setExpectations] = useState([]);
+
+            // Generated Code
+            const [generatedCode, setGeneratedCode] = useState('');
+
+            // Handle File Upload
+            const handleFileUpload = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                setFileName(file.name);
+
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        setCsvData(results);
+
+                        // Initialize columns
+                        const cols = results.meta.fields.map(field => ({
+                            original: field,
+                            newName: field.toLowerCase().replace(/\s+/g, '_'),
+                            dataType: 'string',
+                            isBoolean: false
+                        }));
+                        setColumns(cols);
+
+                        // Auto-switch to configure tab
+                        setCurrentPage('configure');
+                    },
+                    error: (error) => {
+                        alert('Fehler beim Parsen der CSV: ' + error.message);
+                    }
+                });
+            };
+
+            // Fetch Git Templates
+            const fetchTemplates = async () => {
+                if (!gitConfig.repoUrl.trim()) {
+                    setGitStatus('error:Bitte geben Sie eine Repository-URL ein.');
+                    return;
+                }
+
+                setLoadingTemplates(true);
+                setGitStatus('info:Lade Templates...');
+
+                try {
+                    let repoUrl = gitConfig.repoUrl.trim();
+
+                    // Remove .git suffix if present
+                    if (repoUrl.endsWith('.git')) {
+                        repoUrl = repoUrl.slice(0, -4);
+                    }
+
+                    // Parse GitHub URL
+                    const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+                    if (!match) {
+                        throw new Error('Ungültige GitHub URL. Format: https://github.com/owner/repo');
+                    }
+
+                    const [, owner, repo] = match;
+                    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/cleansing_templates?ref=${gitConfig.branch}`;
+
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (!Array.isArray(data)) {
+                        throw new Error('Ungültige Antwort vom GitHub API');
+                    }
+
+                    const templates = {};
+
+                    // Fetch each .py file
+                    for (const file of data) {
+                        if (file.name.endsWith('.py')) {
+                            const fileResponse = await fetch(file.download_url);
+                            const content = await fileResponse.text();
+                            templates[file.name.replace('.py', '')] = content;
+                        }
+                    }
+
+                    // Update state and localStorage
+                    const newGitConfig = { ...gitConfig, templates };
+                    setGitConfig(newGitConfig);
+                    localStorage.setItem('git_repo_url', gitConfig.repoUrl);
+                    localStorage.setItem('git_branch', gitConfig.branch);
+                    localStorage.setItem('git_templates', JSON.stringify(templates));
+
+                    setGitStatus(`success:✓ ${Object.keys(templates).length} Template(s) erfolgreich geladen`);
+                } catch (error) {
+                    setGitStatus(`error:Fehler: ${error.message}`);
+                } finally {
+                    setLoadingTemplates(false);
+                }
+            };
+
+            // Clear Git Templates
+            const clearTemplates = () => {
+                const newGitConfig = { ...gitConfig, templates: {} };
+                setGitConfig(newGitConfig);
+                localStorage.removeItem('git_templates');
+                setGitStatus('info:Templates gelöscht');
+            };
+
+            // Update Column
+            const updateColumn = (index, field, value) => {
+                const newColumns = [...columns];
+                newColumns[index][field] = value;
+                setColumns(newColumns);
+            };
+
+            // Add Expectation
+            const addExpectation = () => {
+                setExpectations([...expectations, {
+                    id: Date.now(),
+                    column: columns[0]?.newName || '',
+                    type: 'not_null',
+                    pattern: '',
+                    action: 'drop'
+                }]);
+            };
+
+            // Update Expectation
+            const updateExpectation = (id, field, value) => {
+                setExpectations(expectations.map(exp =>
+                    exp.id === id ? { ...exp, [field]: value } : exp
+                ));
+            };
+
+            // Remove Expectation
+            const removeExpectation = (id) => {
+                setExpectations(expectations.filter(exp => exp.id !== id));
+            };
+
+            // Pattern Helper Options
+            const patternOptions = [
+                { label: 'Eigenes Pattern...', value: '' },
+                { label: 'E-Mail', value: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' },
+                { label: 'Telefon (DE)', value: '^(\\+49|0)[1-9][0-9]{1,14}$' },
+                { label: 'PLZ (DE)', value: '^[0-9]{5}$' },
+                { label: 'Datum (YYYY-MM-DD)', value: '^\\d{4}-\\d{2}-\\d{2}$' },
+                { label: 'UUID', value: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' },
+                { label: 'Nur Buchstaben', value: '^[a-zA-Z]+$' },
+                { label: 'Nur Zahlen', value: '^[0-9]+$' },
+                { label: 'Alphanumerisch', value: '^[a-zA-Z0-9]+$' }
+            ];
+
+            // Generate Python Code
+            const generatePythonCode = () => {
+                let code = '';
+
+                // Imports
+                code += 'import dlt\n';
+                code += 'from pyspark.sql import DataFrame, functions as F\n';
+                code += 'from typing import Optional\n\n';
+
+                // Helper Functions Section
+                const booleanColumns = columns.filter(col => col.isBoolean);
+                if (booleanColumns.length > 0 && gitConfig.templates['boolean_cleansing']) {
+                    code += '# ============================================\n';
+                    code += '# HELPER FUNCTIONS\n';
+                    code += '# ============================================\n\n';
+                    code += gitConfig.templates['boolean_cleansing'];
+                    code += '\n\n';
+                }
+
+                // Expectations
+                let expectDict = '';
+                if (expectations.length > 0) {
+                    expectDict = '@dlt.expect_all_or_drop({\n';
+                    expectations.forEach((exp, index) => {
+                        let condition = '';
+                        switch(exp.type) {
+                            case 'not_null':
+                                condition = `"${exp.column} IS NOT NULL"`;
+                                break;
+                            case 'unique':
+                                condition = `"${exp.column} IS NOT NULL"`;  // DLT doesn't have direct unique check
+                                break;
+                            case 'pattern':
+                                if (exp.pattern) {
+                                    condition = `"${exp.column} RLIKE '${exp.pattern}'"`;
+                                } else {
+                                    condition = `"${exp.column} IS NOT NULL"`;
+                                }
+                                break;
+                            default:
+                                condition = `"${exp.column} IS NOT NULL"`;
+                        }
+                        expectDict += `    "valid_${exp.column}_${index}": ${condition}`;
+                        if (index < expectations.length - 1) expectDict += ',';
+                        expectDict += '\n';
+                    });
+                    expectDict += '})\n';
+                }
+
+                // DLT Table Definition
+                code += '# ============================================\n';
+                code += '# DLT TABLE DEFINITION\n';
+                code += '# ============================================\n\n';
+                code += `@dlt.table(\n`;
+                code += `    name="${tableConfig.name || 'target_table'}",\n`;
+                code += `    comment="${tableConfig.comment || 'Generated DLT table'}"\n`;
+                code += ')\n';
+                if (expectDict) {
+                    code += expectDict;
+                }
+                code += `def create_${(tableConfig.name || 'target_table').replace(/[^a-zA-Z0-9_]/g, '_')}() -> DataFrame:\n`;
+                code += `    """\n`;
+                code += `    Creates DLT table from CSV source with data quality expectations.\n`;
+                code += `    \n`;
+                code += `    Source: ${fileName}\n`;
+                code += `    Columns: ${columns.length}\n`;
+                if (booleanColumns.length > 0) {
+                    code += `    Boolean columns with cleansing: ${booleanColumns.length}\n`;
+                }
+                code += `    Expectations: ${expectations.length}\n`;
+                code += `    """\n`;
+                code += `    # Read source data\n`;
+                code += `    df = spark.read.csv("path/to/${fileName}", header=True)\n`;
+                code += `    \n`;
+
+                // Boolean Cleansing
+                if (booleanColumns.length > 0 && gitConfig.templates['boolean_cleansing']) {
+                    code += `    # Boolean Cleansing using helper function\n`;
+                    booleanColumns.forEach(col => {
+                        code += `    df = flag_x(df, "${col.original}")\n`;
+                    });
+                    code += `    \n`;
+                }
+
+                // Column Renaming & Type Casting
+                code += `    # Column transformations\n`;
+                code += `    df = df`;
+
+                const renames = columns.filter(col => col.original !== col.newName);
+                if (renames.length > 0) {
+                    renames.forEach((col, index) => {
+                        if (index === 0) code += ' \\\n';
+                        code += `        .withColumnRenamed("${col.original}", "${col.newName}")`;
+                        if (index < renames.length - 1 || columns.some(c => c.dataType !== 'string')) {
+                            code += ' \\';
+                        }
+                        code += '\n';
+                    });
+                }
+
+                // Type Casting
+                const typeCasts = columns.filter(col => col.dataType !== 'string');
+                if (typeCasts.length > 0) {
+                    if (renames.length === 0) code += ' \\\n';
+                    typeCasts.forEach((col, index) => {
+                        const sparkType = col.dataType === 'int' ? 'IntegerType()' :
+                                        col.dataType === 'double' ? 'DoubleType()' :
+                                        col.dataType === 'boolean' ? 'BooleanType()' :
+                                        col.dataType === 'timestamp' ? 'TimestampType()' : 'StringType()';
+                        code += `        .withColumn("${col.newName}", F.col("${col.newName}").cast("${col.dataType}"))`;
+                        if (index < typeCasts.length - 1) code += ' \\';
+                        code += '\n';
+                    });
+                }
+
+                code += `    \n`;
+                code += `    return df\n`;
+
+                setGeneratedCode(code);
+            };
+
+            // Copy to Clipboard
+            const copyToClipboard = () => {
+                navigator.clipboard.writeText(generatedCode).then(() => {
+                    alert('Code in Zwischenablage kopiert!');
+                });
+            };
+
+            // Download as File
+            const downloadCode = () => {
+                const blob = new Blob([generatedCode], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${tableConfig.name || 'dlt_pipeline'}.py`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            // Parse Git Status
+            const getGitStatusType = () => {
+                if (!gitStatus) return null;
+                const [type] = gitStatus.split(':');
+                return type;
+            };
+
+            const getGitStatusMessage = () => {
+                if (!gitStatus) return '';
+                const parts = gitStatus.split(':');
+                return parts.slice(1).join(':');
+            };
+
+            return (
+                <div className="app-container">
+                    <div className="header">
+                        <h1>📊 Databricks DLT Generator</h1>
+                        <p>Unified Edition - CSV zu Databricks Delta Live Tables mit Expectations</p>
+                    </div>
+
+                    <div className="main-content">
+                        <div className="navigation">
+                            <button
+                                className={`nav-button ${currentPage === 'upload' ? 'active' : ''}`}
+                                onClick={() => setCurrentPage('upload')}
+                            >
+                                1️⃣ Upload & Git
+                            </button>
+                            <button
+                                className={`nav-button ${currentPage === 'configure' ? 'active' : ''}`}
+                                onClick={() => setCurrentPage('configure')}
+                                disabled={!csvData}
+                            >
+                                2️⃣ Konfiguration
+                            </button>
+                            <button
+                                className={`nav-button ${currentPage === 'generate' ? 'active' : ''}`}
+                                onClick={() => setCurrentPage('generate')}
+                                disabled={!csvData}
+                            >
+                                3️⃣ Generierung
+                            </button>
+                        </div>
+
+                        {/* Page 1: Upload & Git Configuration */}
+                        <div className={`page ${currentPage === 'upload' ? 'active' : ''}`}>
+                            <div className="upload-area" onClick={() => document.getElementById('fileInput').click()}>
+                                <div className="upload-icon">📁</div>
+                                <h2>{fileName || 'CSV-Datei hochladen'}</h2>
+                                <p>{csvData ? `✓ ${csvData.data.length} Zeilen geladen` : 'Klicken oder Datei hierher ziehen'}</p>
+                                <button className="upload-button" onClick={(e) => e.stopPropagation()}>
+                                    Datei auswählen
+                                </button>
+                                <input
+                                    type="file"
+                                    id="fileInput"
+                                    accept=".csv"
+                                    onChange={handleFileUpload}
+                                />
+                            </div>
+
+                            <div className="git-config-section">
+                                <h3>🔗 Git Template Repository (Optional)</h3>
+                                <p style={{color: '#718096', marginBottom: '20px'}}>
+                                    Laden Sie Cleansing-Templates aus einem Git-Repository
+                                </p>
+
+                                <div className="form-group">
+                                    <label>Repository URL</label>
+                                    <input
+                                        type="text"
+                                        placeholder="https://github.com/owner/repo"
+                                        value={gitConfig.repoUrl}
+                                        onChange={(e) => setGitConfig({...gitConfig, repoUrl: e.target.value})}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Branch</label>
+                                    <input
+                                        type="text"
+                                        placeholder="main"
+                                        value={gitConfig.branch}
+                                        onChange={(e) => setGitConfig({...gitConfig, branch: e.target.value})}
+                                    />
+                                </div>
+
+                                <div className="button-group">
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={fetchTemplates}
+                                        disabled={loadingTemplates || !gitConfig.repoUrl}
+                                    >
+                                        {loadingTemplates ? 'Lädt...' : '📥 Templates laden'}
+                                    </button>
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={clearTemplates}
+                                        disabled={Object.keys(gitConfig.templates).length === 0}
+                                    >
+                                        🗑️ Templates löschen
+                                    </button>
+                                </div>
+
+                                {gitStatus && (
+                                    <div className={`template-status ${getGitStatusType()}`}>
+                                        <span>{getGitStatusMessage()}</span>
+                                    </div>
+                                )}
+
+                                {Object.keys(gitConfig.templates).length > 0 && (
+                                    <div className="template-list">
+                                        <h4 style={{marginTop: '20px', marginBottom: '12px'}}>Geladene Templates:</h4>
+                                        {Object.keys(gitConfig.templates).map(name => (
+                                            <div key={name} className="template-item">
+                                                ✓ {name}.py
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="info-box">
+                                    <h4>ℹ️ Wie funktioniert die Git-Integration?</h4>
+                                    <ul>
+                                        <li>Erstellen Sie einen <strong>öffentlichen</strong> GitHub-Repository</li>
+                                        <li>Fügen Sie einen Ordner <code>cleansing_templates</code> hinzu</li>
+                                        <li>Legen Sie Python-Dateien mit Cleansing-Logik ab (z.B. <code>boolean_cleansing.py</code>)</li>
+                                        <li>Verwenden Sie Platzhalter: <code>{`{column_name}`}</code> und <code>{`{new_column_name}`}</code></li>
+                                        <li>Templates werden automatisch für entsprechende Attribute eingefügt</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Page 2: Configuration */}
+                        <div className={`page ${currentPage === 'configure' ? 'active' : ''}`}>
+                            <div className="table-section">
+                                <div className="table-header">
+                                    <h2 className="table-name">Tabellen-Metadaten</h2>
+                                </div>
+                                <div className="table-content">
+                                    <div className="form-group">
+                                        <label>Tabellenname</label>
+                                        <input
+                                            type="text"
+                                            placeholder="z.B. customer_data"
+                                            value={tableConfig.name}
+                                            onChange={(e) => setTableConfig({...tableConfig, name: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Beschreibung</label>
+                                        <textarea
+                                            placeholder="z.B. Kundendaten mit Quality Checks"
+                                            value={tableConfig.comment}
+                                            onChange={(e) => setTableConfig({...tableConfig, comment: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="column-list">
+                                <h3>Spalten-Konfiguration ({columns.length} Spalten)</h3>
+                                {columns.map((col, index) => (
+                                    <div key={index} className="column-item">
+                                        <div className="column-original">{col.original}</div>
+                                        <div className="column-input">
+                                            <input
+                                                type="text"
+                                                value={col.newName}
+                                                onChange={(e) => updateColumn(index, 'newName', e.target.value)}
+                                                placeholder="Neuer Spaltenname"
+                                            />
+                                        </div>
+                                        <div className="column-type">
+                                            <select
+                                                value={col.dataType}
+                                                onChange={(e) => updateColumn(index, 'dataType', e.target.value)}
+                                            >
+                                                <option value="string">String</option>
+                                                <option value="int">Integer</option>
+                                                <option value="double">Double</option>
+                                                <option value="boolean">Boolean</option>
+                                                <option value="timestamp">Timestamp</option>
+                                            </select>
+                                        </div>
+                                        <div className="checkbox-group">
+                                            <input
+                                                type="checkbox"
+                                                id={`bool-${index}`}
+                                                checked={col.isBoolean}
+                                                onChange={(e) => updateColumn(index, 'isBoolean', e.target.checked)}
+                                            />
+                                            <label htmlFor={`bool-${index}`}>Boolean</label>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="expectations-section">
+                                <h3>Data Quality Expectations</h3>
+                                {expectations.map(exp => (
+                                    <div key={exp.id} className="expectation-item">
+                                        <div className="expectation-fields">
+                                            <div className="form-group" style={{marginBottom: 0}}>
+                                                <label>Spalte</label>
+                                                <select
+                                                    value={exp.column}
+                                                    onChange={(e) => updateExpectation(exp.id, 'column', e.target.value)}
+                                                    style={{width: '100%', padding: '10px 14px', border: '2px solid #e2e8f0', borderRadius: '8px'}}
+                                                >
+                                                    {columns.map(col => (
+                                                        <option key={col.newName} value={col.newName}>{col.newName}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="form-group" style={{marginBottom: 0}}>
+                                                <label>Typ</label>
+                                                <select
+                                                    value={exp.type}
+                                                    onChange={(e) => updateExpectation(exp.id, 'type', e.target.value)}
+                                                    style={{width: '100%', padding: '10px 14px', border: '2px solid #e2e8f0', borderRadius: '8px'}}
+                                                >
+                                                    <option value="not_null">NOT NULL</option>
+                                                    <option value="unique">UNIQUE</option>
+                                                    <option value="pattern">Pattern (Regex)</option>
+                                                </select>
+                                            </div>
+                                            {exp.type === 'pattern' && (
+                                                <div className="form-group" style={{marginBottom: 0}}>
+                                                    <label>Pattern Helper</label>
+                                                    <select
+                                                        className="pattern-select"
+                                                        onChange={(e) => updateExpectation(exp.id, 'pattern', e.target.value)}
+                                                    >
+                                                        {patternOptions.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
+                                            <button
+                                                className="btn-remove"
+                                                onClick={() => removeExpectation(exp.id)}
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                        {exp.type === 'pattern' && exp.pattern && (
+                                            <div style={{marginTop: '12px', padding: '12px', background: '#f7fafc', borderRadius: '8px', fontFamily: 'monospace', fontSize: '13px'}}>
+                                                Pattern: {exp.pattern}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                                <button className="btn-add" onClick={addExpectation}>
+                                    + Expectation hinzufügen
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Page 3: Generate Code */}
+                        <div className={`page ${currentPage === 'generate' ? 'active' : ''}`}>
+                            <div className="summary-cards">
+                                <div className="summary-card">
+                                    <div className="summary-card-value">{columns.length}</div>
+                                    <div className="summary-card-label">Spalten</div>
+                                </div>
+                                <div className="summary-card">
+                                    <div className="summary-card-value">{columns.filter(c => c.isBoolean).length}</div>
+                                    <div className="summary-card-label">Boolean-Felder</div>
+                                </div>
+                                <div className="summary-card">
+                                    <div className="summary-card-value">{expectations.length}</div>
+                                    <div className="summary-card-label">Expectations</div>
+                                </div>
+                                <div className="summary-card">
+                                    <div className="summary-card-value">{Object.keys(gitConfig.templates).length}</div>
+                                    <div className="summary-card-label">Templates</div>
+                                </div>
+                            </div>
+
+                            <button className="generate-button" onClick={generatePythonCode}>
+                                🚀 Python-Code generieren
+                            </button>
+
+                            {generatedCode && (
+                                <div className="code-output">
+                                    <div className="code-header">
+                                        <h3>Generierter Code</h3>
+                                        <div className="code-actions">
+                                            <button className="btn btn-primary" onClick={copyToClipboard}>
+                                                📋 Kopieren
+                                            </button>
+                                            <button className="btn btn-primary" onClick={downloadCode}>
+                                                📥 Download
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="code-content">{generatedCode}</div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

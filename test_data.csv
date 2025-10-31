@@ -1,0 +1,6 @@
+CUSTOMER_ID,FIRST_NAME,LAST_NAME,EMAIL,IS_ACTIVE_FLAG,CONSENT_FLAG,REGISTRATION_DATE,TOTAL_ORDERS
+1001,Hans,Mueller,hans.mueller@example.de,X,,2023-01-15,5
+1002,Anna,Schmidt,anna.schmidt@example.de,X,X,2023-02-20,12
+1003,Peter,Wagner,peter.wagner@example.de, ,,2023-03-10,0
+1004,Maria,Becker,maria.becker@example.de,X,X,2023-04-05,8
+1005,Thomas,Schneider,thomas.schneider@example.de,X, ,2023-05-12,3
