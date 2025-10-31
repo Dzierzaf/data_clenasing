@@ -1,0 +1,2104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV zu Python Code Generator - Professional Edition</title>
+    <!-- React & Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- PapaParse für CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .header h1 {
+            margin: 0;
+            color: #1a202c;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            color: #718096;
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        /* Navigation */
+        .navigation {
+            display: flex;
+            background: #f7fafc;
+            border-bottom: 2px solid #e2e8f0;
+            overflow-x: auto;
+        }
+        
+        .nav-button {
+            padding: 20px 30px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #4a5568;
+            transition: all 0.2s;
+            position: relative;
+            white-space: nowrap;
+        }
+        
+        .nav-button:hover {
+            background: #edf2f7;
+            color: #2d3748;
+        }
+        
+        .nav-button.active {
+            color: #3182ce;
+            background: white;
+        }
+        
+        .nav-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #3182ce;
+        }
+        
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Pages */
+        .page {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 60px;
+            text-align: center;
+            background: #f7fafc;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #3182ce;
+            background: #ebf8ff;
+        }
+        
+        .upload-area.has-file {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #a0aec0;
+        }
+        
+        .upload-button {
+            background: #3182ce;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .upload-button:hover {
+            background: #2c5aa0;
+            transform: translateY(-1px);
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        /* Table Sections */
+        .table-section {
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        
+        .table-section:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: white;
+        }
+        
+        .table-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .table-content {
+            padding: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2d3748;
+        }
+        
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        /* Column List */
+        .column-list {
+            margin-top: 24px;
+        }
+        
+        .column-list h3 {
+            margin-bottom: 16px;
+            color: #2d3748;
+        }
+        
+        .column-item {
+            display: grid;
+            grid-template-columns: 200px 1fr auto;
+            gap: 20px;
+            padding: 16px;
+            background: #f7fafc;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .column-item:hover {
+            background: #edf2f7;
+        }
+        
+        .column-original {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: #2d3748;
+            color: #48bb78;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .column-input {
+            display: flex;
+            align-items: center;
+        }
+        
+        .column-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+        
+        .column-input input:focus {
+            outline: none;
+            border-color: #3182ce;
+        }
+        
+        .column-options {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .checkbox-group label {
+            cursor: pointer;
+            user-select: none;
+            font-weight: 500;
+            color: #4a5568;
+        }
+        
+        /* Quality Rules */
+        .quality-section {
+            margin-bottom: 32px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .quality-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 20px;
+            color: white;
+        }
+        
+        .quality-content {
+            padding: 24px;
+        }
+        
+        .attribute-section {
+            margin-bottom: 32px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+        
+        .attribute-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .attribute-arrow {
+            margin: 0 10px;
+            color: #718096;
+        }
+        
+        .quality-rule {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .rule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .rule-type {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .rule-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .rule-actions {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .radio-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .radio-group input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .radio-group label {
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .remove-button {
+            background: #fc8181;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .remove-button:hover {
+            background: #f56565;
+        }
+        
+        .rule-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-top: 8px;
+        }
+        
+        .add-rule-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            background: white;
+        }
+        
+        /* Git Config */
+        .git-section {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .git-section h2 {
+            margin-top: 0;
+            color: #2d3748;
+        }
+        
+        .git-description {
+            color: #718096;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .primary-button {
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .primary-button:hover {
+            background: #2c5aa0;
+            transform: translateY(-1px);
+        }
+        
+        .secondary-button {
+            background: #e2e8f0;
+            color: #2d3748;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .secondary-button:hover {
+            background: #cbd5e0;
+        }
+        
+        /* Templates */
+        .template-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .template-name {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+        
+        .template-code {
+            background: #2d3748;
+            color: #48bb78;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        
+        /* Status Messages */
+        .status-message {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .status-message.info {
+            background: #bee3f8;
+            color: #2c5aa0;
+            border: 1px solid #90cdf4;
+        }
+        
+        .status-message.success {
+            background: #c6f6d5;
+            color: #276749;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .status-message.error {
+            background: #fed7d7;
+            color: #9b2c2c;
+            border: 1px solid #feb2b2;
+        }
+        
+        /* Generate Button */
+        .generate-section {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            border-top: 2px solid #e2e8f0;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .generate-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 48px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .generate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .generate-button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        /* Code Output */
+        .code-output {
+            margin-top: 32px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .code-header {
+            background: #2d3748;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .code-header h2 {
+            margin: 0;
+        }
+        
+        .code-content {
+            background: #1a202c;
+            color: #48bb78;
+            padding: 24px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.6;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .download-button {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .download-button:hover {
+            background: #38a169;
+        }
+        
+        /* Chat */
+        .chat-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .chat-toggle:hover {
+            transform: scale(1.1);
+        }
+        
+        .chat-container {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            height: 500px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        
+        .chat-container.minimized {
+            height: 60px;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .chat-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        
+        .chat-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* Regex Builder */
+        .regex-builder {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        
+        .regex-controls {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .regex-section {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        
+        .regex-section h3 {
+            margin-top: 0;
+            color: #2d3748;
+            font-size: 16px;
+        }
+        
+        .regex-checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+        
+        .regex-preview {
+            background: #2d3748;
+            color: #48bb78;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        
+        /* Pattern Helper */
+        .pattern-helper {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        
+        .pattern-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+        
+        .pattern-preview {
+            background: #2d3748;
+            color: #48bb78;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+        
+        /* Help Section */
+        .help-section {
+            background: #ebf8ff;
+            border: 2px solid #90cdf4;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 32px;
+        }
+        
+        .help-section h4 {
+            color: #2c5aa0;
+            margin-top: 0;
+        }
+        
+        .help-section ol {
+            margin-left: 20px;
+            line-height: 1.8;
+            color: #2c5aa0;
+        }
+        
+        .help-code {
+            background: #2d3748;
+            color: #48bb78;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useCallback, useEffect, useRef } = React;
+
+        // Regex Builder Component
+        function RegexBuilder() {
+            const [tokens, setTokens] = useState([]);
+            const [selectedClasses, setSelectedClasses] = useState({
+                uppercase: false,
+                lowercase: false,
+                digit: false,
+                special: false,
+                space: false
+            });
+            const [literal, setLiteral] = useState('');
+            const [wildcard, setWildcard] = useState(false);
+            const [min, setMin] = useState(1);
+            const [max, setMax] = useState(1);
+
+            const handleClassChange = (type) => {
+                setSelectedClasses(prev => ({ ...prev, [type]: !prev[type] }));
+            };
+
+            const addToken = () => {
+                let token;
+                if (literal) {
+                    token = { literal, quantifier: { min, max } };
+                } else if (wildcard) {
+                    token = { wildcard: true, quantifier: { min, max } };
+                } else {
+                    const classes = Object.keys(selectedClasses).filter(c => selectedClasses[c]);
+                    if (classes.length === 0) return;
+                    token = { charClasses: classes, quantifier: { min, max } };
+                }
+                setTokens([...tokens, token]);
+                setSelectedClasses({ uppercase:false, lowercase:false, digit:false, special:false, space:false });
+                setLiteral('');
+                setWildcard(false);
+                setMin(1);
+                setMax(1);
+            };
+
+            const buildRegex = () => {
+                return tokens.map(tok => {
+                    let frag = '';
+                    if (tok.literal) {
+                        frag = tok.literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    } else if (tok.wildcard) {
+                        frag = '.';
+                    } else if (tok.charClasses) {
+                        const parts = [];
+                        tok.charClasses.forEach(c => {
+                            switch(c) {
+                                case 'uppercase': parts.push('A-Z'); break;
+                                case 'lowercase': parts.push('a-z'); break;
+                                case 'digit': parts.push('0-9'); break;
+                                case 'special': parts.push('^A-Za-z0-9\\s'); break;
+                                case 'space': parts.push('\\s'); break;
+                            }
+                        });
+                        frag = `[${parts.join('')}]`;
+                    }
+                    const { min, max } = tok.quantifier;
+                    frag += max === min ? `{${min}}` : `{${min},${max}}`;
+                    return frag;
+                }).join('');
+            };
+
+            const removeToken = (index) => {
+                setTokens(tokens.filter((_, i) => i !== index));
+            };
+
+            return (
+                <div className="regex-builder">
+                    <h2>Regex Builder - Erstellen Sie Muster ohne Vorkenntnisse</h2>
+                    
+                    <div className="regex-controls">
+                        <div className="regex-section">
+                            <h3>Zeichenklassen auswählen</h3>
+                            <div className="regex-checkbox-group">
+                                <div className="checkbox-group">
+                                    <input 
+                                        type="checkbox" 
+                                        id="uppercase"
+                                        checked={selectedClasses.uppercase} 
+                                        onChange={() => handleClassChange('uppercase')} 
+                                    />
+                                    <label htmlFor="uppercase">Großbuchstaben (A-Z)</label>
+                                </div>
+                                <div className="checkbox-group">
+                                    <input 
+                                        type="checkbox"
+                                        id="lowercase" 
+                                        checked={selectedClasses.lowercase} 
+                                        onChange={() => handleClassChange('lowercase')} 
+                                    />
+                                    <label htmlFor="lowercase">Kleinbuchstaben (a-z)</label>
+                                </div>
+                                <div className="checkbox-group">
+                                    <input 
+                                        type="checkbox"
+                                        id="digit" 
+                                        checked={selectedClasses.digit} 
+                                        onChange={() => handleClassChange('digit')} 
+                                    />
+                                    <label htmlFor="digit">Ziffern (0-9)</label>
+                                </div>
+                                <div className="checkbox-group">
+                                    <input 
+                                        type="checkbox"
+                                        id="special" 
+                                        checked={selectedClasses.special} 
+                                        onChange={() => handleClassChange('special')} 
+                                    />
+                                    <label htmlFor="special">Sonderzeichen</label>
+                                </div>
+                                <div className="checkbox-group">
+                                    <input 
+                                        type="checkbox"
+                                        id="space" 
+                                        checked={selectedClasses.space} 
+                                        onChange={() => handleClassChange('space')} 
+                                    />
+                                    <label htmlFor="space">Leerzeichen</label>
+                                </div>
+                                <div className="checkbox-group">
+                                    <input 
+                                        type="checkbox"
+                                        id="wildcard" 
+                                        checked={wildcard} 
+                                        onChange={() => setWildcard(!wildcard)} 
+                                    />
+                                    <label htmlFor="wildcard">Beliebiges Zeichen (.)</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="regex-section">
+                            <h3>Oder exakte Zeichen</h3>
+                            <div className="form-group">
+                                <input 
+                                    type="text" 
+                                    value={literal} 
+                                    onChange={e => setLiteral(e.target.value)} 
+                                    placeholder="z.B. @ oder -"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="regex-section">
+                            <h3>Anzahl der Zeichen</h3>
+                            <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
+                                <div className="form-group">
+                                    <label>Minimum:</label>
+                                    <input 
+                                        type="number" 
+                                        value={min} 
+                                        min="0" 
+                                        onChange={e => setMin(parseInt(e.target.value)||0)} 
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Maximum:</label>
+                                    <input 
+                                        type="number" 
+                                        value={max} 
+                                        min="0" 
+                                        onChange={e => setMax(parseInt(e.target.value)||0)} 
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button className="primary-button" onClick={addToken}>
+                            Token hinzufügen
+                        </button>
+                    </div>
+                    
+                    {tokens.length > 0 && (
+                        <div className="regex-section">
+                            <h3>Ihre Tokens</h3>
+                            {tokens.map((tok, i) => (
+                                <div key={i} style={{
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center',
+                                    padding: '12px',
+                                    background: '#f7fafc',
+                                    borderRadius: '6px',
+                                    marginBottom: '8px'
+                                }}>
+                                    <span>
+                                        {tok.literal ? `Literal "${tok.literal}"` : 
+                                         tok.wildcard ? 'Beliebiges Zeichen' : 
+                                         `Klassen: ${tok.charClasses.join(', ')}`} 
+                                        – {tok.quantifier.min} bis {tok.quantifier.max} Zeichen
+                                    </span>
+                                    <button 
+                                        className="remove-button" 
+                                        onClick={() => removeToken(i)}
+                                    >
+                                        Entfernen
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    
+                    <div className="regex-preview">
+                        <strong>Generierter Regex:</strong> {buildRegex() || 'Noch kein Pattern definiert'}
+                    </div>
+                </div>
+            );
+        }
+
+        // Chat Component
+        function ChatAssistant({ tables }) {
+            const [isOpen, setIsOpen] = useState(false);
+            const [isMinimized, setIsMinimized] = useState(false);
+            const [apiKey, setApiKey] = useState(localStorage.getItem('openai_api_key') || '');
+            const [hasApiKey, setHasApiKey] = useState(!!localStorage.getItem('openai_api_key'));
+            const [messages, setMessages] = useState([
+                { role: 'assistant', content: 'Hallo! Ich bin Ihr KI-Assistent und kann Ihnen bei Fragen zum Tool helfen.' }
+            ]);
+            const [inputValue, setInputValue] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const messagesEndRef = useRef(null);
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            };
+
+            useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+
+            const saveApiKey = () => {
+                localStorage.setItem('openai_api_key', apiKey);
+                setHasApiKey(true);
+            };
+
+            const sendMessage = async () => {
+                if (!inputValue.trim() || isLoading) return;
+
+                const userMessage = inputValue;
+                setInputValue('');
+                setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+                setIsLoading(true);
+
+                try {
+                    const systemPrompt = `Du bist ein hilfreicher Assistent für ein Datenbank-Tool. 
+                    Der Benutzer arbeitet mit Tabellen und Feldern.
+                    Vorhandene Tabellen: ${JSON.stringify(tables)}
+                    Beantworte Fragen zum Tool, gib Tipps zur Nutzung und erkläre Features.`;
+
+                    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('openai_api_key')}`
+                        },
+                        body: JSON.stringify({
+                            model: 'gpt-3.5-turbo',
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                ...messages.slice(1),
+                                { role: 'user', content: userMessage }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 200
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('API request failed');
+                    }
+
+                    const data = await response.json();
+                    const assistantMessage = data.choices[0].message.content;
+                    setMessages(prev => [...prev, { role: 'assistant', content: assistantMessage }]);
+                } catch (error) {
+                    setMessages(prev => [...prev, { 
+                        role: 'assistant', 
+                        content: 'Entschuldigung, es gab einen Fehler. Bitte überprüfen Sie Ihren API-Key.' 
+                    }]);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            if (!isOpen) {
+                return (
+                    <button className="chat-toggle" onClick={() => setIsOpen(true)}>
+                        💬
+                    </button>
+                );
+            }
+
+            return (
+                <div className={`chat-container ${isMinimized ? 'minimized' : ''}`}>
+                    <div className="chat-header" onClick={() => setIsMinimized(!isMinimized)}>
+                        <span style={{fontWeight: 600}}>KI-Assistent</span>
+                        <button 
+                            className="chat-close"
+                            onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    {!isMinimized && (
+                        <>
+                            {!hasApiKey ? (
+                                <div style={{padding: '20px'}}>
+                                    <p style={{marginBottom: '16px', color: '#4a5568'}}>
+                                        Bitte geben Sie Ihren OpenAI API-Key ein:
+                                    </p>
+                                    <input
+                                        type="password"
+                                        className="form-group input"
+                                        placeholder="sk-..."
+                                        value={apiKey}
+                                        onChange={(e) => setApiKey(e.target.value)}
+                                        style={{marginBottom: '12px'}}
+                                    />
+                                    <button 
+                                        className="primary-button"
+                                        onClick={saveApiKey}
+                                        disabled={!apiKey}
+                                        style={{width: '100%'}}
+                                    >
+                                        API-Key speichern
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div style={{
+                                        flex: 1,
+                                        padding: '20px',
+                                        overflowY: 'auto',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '12px'
+                                    }}>
+                                        {messages.map((msg, index) => (
+                                            <div key={index} style={{
+                                                padding: '12px 16px',
+                                                borderRadius: '12px',
+                                                maxWidth: '80%',
+                                                alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                                                background: msg.role === 'user' ? 
+                                                    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 
+                                                    '#f7fafc',
+                                                color: msg.role === 'user' ? 'white' : '#2d3748'
+                                            }}>
+                                                {msg.content}
+                                            </div>
+                                        ))}
+                                        {isLoading && (
+                                            <div style={{
+                                                padding: '12px 16px',
+                                                borderRadius: '12px',
+                                                background: '#f7fafc',
+                                                color: '#718096',
+                                                alignSelf: 'flex-start'
+                                            }}>
+                                                Denke nach...
+                                            </div>
+                                        )}
+                                        <div ref={messagesEndRef} />
+                                    </div>
+                                    <div style={{
+                                        padding: '20px',
+                                        borderTop: '1px solid #e2e8f0'
+                                    }}>
+                                        <textarea
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                border: '2px solid #e2e8f0',
+                                                borderRadius: '8px',
+                                                resize: 'none',
+                                                fontSize: '15px'
+                                            }}
+                                            rows="2"
+                                            placeholder="Ihre Frage..."
+                                            value={inputValue}
+                                            onChange={(e) => setInputValue(e.target.value)}
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    sendMessage();
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </>
+                            )}
+                        </>
+                    )}
+                </div>
+            );
+        }
+
+        // Main App Component
+        function App() {
+            const [currentPage, setCurrentPage] = useState('schema');
+            const [csvData, setCsvData] = useState(null);
+            const [tables, setTables] = useState({});
+            const [qualityRules, setQualityRules] = useState({});
+            const [generatedCode, setGeneratedCode] = useState('');
+            const [gitConfig, setGitConfig] = useState({
+                repoUrl: localStorage.getItem('git_repo_url') || '',
+                branch: localStorage.getItem('git_branch') || 'main',
+                templates: JSON.parse(localStorage.getItem('git_templates') || '{}')
+            });
+
+            const handleFileUpload = useCallback((event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    Papa.parse(file, {
+                        complete: (results) => {
+                            processCsvData(results.data);
+                        },
+                        header: true,
+                        skipEmptyLines: true
+                    });
+                }
+            }, []);
+
+            const processCsvData = (data) => {
+                const tableData = {};
+                const rules = {};
+                
+                data.forEach(row => {
+                    if (row.table_and_field) {
+                        const [tableName, fieldName] = row.table_and_field.split('-');
+                        if (tableName && fieldName) {
+                            if (!tableData[tableName]) {
+                                tableData[tableName] = {
+                                    originalName: tableName,
+                                    newName: tableName.toLowerCase(),
+                                    description: '',
+                                    columns: []
+                                };
+                                rules[tableName] = {};
+                            }
+                            
+                            if (!tableData[tableName].columns.find(col => col.original === fieldName)) {
+                                tableData[tableName].columns.push({
+                                    original: fieldName,
+                                    newName: fieldName.toLowerCase(),
+                                    isBoolean: false,
+                                    isMandatory: false
+                                });
+                                
+                                rules[tableName][fieldName] = [];
+                            }
+                        }
+                    }
+                });
+                
+                setTables(tableData);
+                setQualityRules(rules);
+                setCsvData(data);
+            };
+
+            const updateTableName = (tableName, newName) => {
+                setTables(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        newName: newName
+                    }
+                }));
+            };
+
+            const updateTableDescription = (tableName, description) => {
+                setTables(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        description: description
+                    }
+                }));
+            };
+
+            const updateColumnName = (tableName, columnIndex, newName) => {
+                setTables(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        columns: prev[tableName].columns.map((col, idx) => 
+                            idx === columnIndex ? { ...col, newName: newName } : col
+                        )
+                    }
+                }));
+            };
+
+            const updateColumnBoolean = (tableName, columnIndex, isBoolean) => {
+                setTables(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        columns: prev[tableName].columns.map((col, idx) => 
+                            idx === columnIndex ? { ...col, isBoolean: isBoolean } : col
+                        )
+                    }
+                }));
+            };
+
+            const updateColumnMandatory = (tableName, columnIndex, isMandatory) => {
+                setTables(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        columns: prev[tableName].columns.map((col, idx) => 
+                            idx === columnIndex ? { ...col, isMandatory: isMandatory } : col
+                        )
+                    }
+                }));
+            };
+
+            const addQualityRule = (tableName, columnName, ruleType) => {
+                setQualityRules(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        [columnName]: [
+                            ...(prev[tableName][columnName] || []),
+                            {
+                                id: Date.now(),
+                                type: ruleType,
+                                value: '',
+                                action: 'warn'
+                            }
+                        ]
+                    }
+                }));
+            };
+
+            const updateQualityRule = (tableName, columnName, ruleId, field, value) => {
+                setQualityRules(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        [columnName]: prev[tableName][columnName].map(rule =>
+                            rule.id === ruleId ? { ...rule, [field]: value } : rule
+                        )
+                    }
+                }));
+            };
+
+            const removeQualityRule = (tableName, columnName, ruleId) => {
+                setQualityRules(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        [columnName]: prev[tableName][columnName].filter(rule => rule.id !== ruleId)
+                    }
+                }));
+            };
+
+            const saveGitConfig = () => {
+                localStorage.setItem('git_repo_url', gitConfig.repoUrl);
+                localStorage.setItem('git_branch', gitConfig.branch);
+                localStorage.setItem('git_templates', JSON.stringify(gitConfig.templates));
+                alert('Konfiguration gespeichert!');
+            };
+
+            const fetchTemplates = async () => {
+                if (!gitConfig.repoUrl) {
+                    alert('Bitte geben Sie eine Repository-URL ein');
+                    return;
+                }
+
+                try {
+                    let apiUrl = '';
+                    let repoUrl = gitConfig.repoUrl.trim();
+                    
+                    if (repoUrl.endsWith('.git')) {
+                        repoUrl = repoUrl.slice(0, -4);
+                    }
+                    
+                    if (repoUrl.includes('github.com')) {
+                        const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+                        if (match) {
+                            const [, owner, repo] = match;
+                            apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/cleansing_templates?ref=${gitConfig.branch}`;
+                        }
+                    } else if (repoUrl.includes('raw.githubusercontent.com')) {
+                        apiUrl = repoUrl;
+                    }
+
+                    if (!apiUrl) {
+                        throw new Error('Unsupported repository URL format');
+                    }
+
+                    console.log('Fetching from:', apiUrl);
+                    const response = await fetch(apiUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const templates = {};
+                    const contentType = response.headers.get("content-type");
+                    
+                    if (contentType && contentType.indexOf("application/json") !== -1) {
+                        const data = await response.json();
+                        
+                        if (Array.isArray(data)) {
+                            for (const file of data) {
+                                if (file.name.endsWith('.py')) {
+                                    console.log('Fetching file:', file.name);
+                                    const fileResponse = await fetch(file.download_url);
+                                    const content = await fileResponse.text();
+                                    templates[file.name.replace('.py', '')] = content;
+                                }
+                            }
+                        }
+                    } else {
+                        const content = await response.text();
+                        templates['default'] = content;
+                    }
+
+                    setGitConfig(prev => {
+                        const newConfig = {
+                            ...prev,
+                            templates: templates
+                        };
+                        localStorage.setItem('git_templates', JSON.stringify(templates));
+                        return newConfig;
+                    });
+                    
+                    alert(`${Object.keys(templates).length} Templates erfolgreich geladen!`);
+                } catch (error) {
+                    console.error('Error fetching templates:', error);
+                    alert(`Fehler beim Laden der Templates: ${error.message}\n\nBitte überprüfen Sie:\n- Ist das Repository öffentlich?\n- Existiert der Ordner 'cleansing_templates'?\n- Ist die URL korrekt (ohne .git am Ende)?`);
+                }
+            };
+
+            const generatePythonCode = () => {
+                let fullCode = '# Generated Python Code\n\n';
+                
+                Object.entries(tables).forEach(([tableName, tableData]) => {
+                    const tableQualityRules = qualityRules[tableName] || {};
+                    const warnExpectations = {};
+                    const dropExpectations = {};
+                    
+                    tableData.columns.forEach(col => {
+                        if (col.isMandatory) {
+                            const notNullRule = tableQualityRules[col.original]?.find(r => r.type === 'notNull');
+                            const action = notNullRule?.action || 'warn';
+                            const expectation = `${col.original}_is_not_null`;
+                            const sql = `${col.original} IS NOT NULL`;
+                            
+                            if (action === 'warn') {
+                                warnExpectations[expectation] = sql;
+                            } else {
+                                dropExpectations[expectation] = sql;
+                            }
+                        }
+                    });
+                    
+                    Object.entries(tableQualityRules).forEach(([columnName, rules]) => {
+                        rules.forEach(rule => {
+                            if (!rule.value && rule.type !== 'notNull') return;
+                            
+                            let expectationKey = '';
+                            let expectationSQL = '';
+                            
+                            switch (rule.type) {
+                                case 'allowedValues':
+                                    const allowedVals = rule.value.split(',').map(v => v.trim());
+                                    if (allowedVals.length === 1) {
+                                        expectationKey = `valid_${columnName}_value`;
+                                        expectationSQL = `${columnName} = '${allowedVals[0]}'`;
+                                    } else {
+                                        expectationKey = `valid_${columnName}_values`;
+                                        expectationSQL = `${columnName} IN (${allowedVals.map(v => `'${v}'`).join(', ')})`;
+                                    }
+                                    break;
+                                
+                                case 'notAllowedValues':
+                                    const notAllowedVals = rule.value.split(',').map(v => v.trim());
+                                    if (notAllowedVals.length === 1) {
+                                        expectationKey = `invalid_${columnName}_value`;
+                                        expectationSQL = `${columnName} != '${notAllowedVals[0]}'`;
+                                    } else {
+                                        expectationKey = `invalid_${columnName}_values`;
+                                        expectationSQL = `${columnName} NOT IN (${notAllowedVals.map(v => `'${v}'`).join(', ')})`;
+                                    }
+                                    break;
+                                
+                                case 'lessThan':
+                                    expectationKey = `${columnName}_less_than`;
+                                    expectationSQL = `${columnName} < ${rule.value}`;
+                                    break;
+                                
+                                case 'lessOrEqual':
+                                    expectationKey = `${columnName}_less_or_equal`;
+                                    expectationSQL = `${columnName} <= ${rule.value}`;
+                                    break;
+                                
+                                case 'greaterThan':
+                                    expectationKey = `${columnName}_greater_than`;
+                                    expectationSQL = `${columnName} > ${rule.value}`;
+                                    break;
+                                
+                                case 'greaterOrEqual':
+                                    expectationKey = `${columnName}_greater_or_equal`;
+                                    expectationSQL = `${columnName} >= ${rule.value}`;
+                                    break;
+                                
+                                case 'pattern':
+                                    expectationKey = `valid_${columnName}_pattern`;
+                                    expectationSQL = `REGEXP(${columnName}, '^${rule.value}$')`;
+                                    break;
+                            }
+                            
+                            if (expectationKey && expectationSQL) {
+                                if (rule.action === 'warn') {
+                                    warnExpectations[expectationKey] = expectationSQL;
+                                } else {
+                                    dropExpectations[expectationKey] = expectationSQL;
+                                }
+                            }
+                        });
+                    });
+                    
+                    if (Object.keys(warnExpectations).length > 0) {
+                        fullCode += `${tableData.newName}_warn_expectations = {\n`;
+                        Object.entries(warnExpectations).forEach(([key, value], index, array) => {
+                            fullCode += `    "${key}": "${value}"`;
+                            if (index < array.length - 1) fullCode += ',';
+                            fullCode += '\n';
+                        });
+                        fullCode += '}\n\n';
+                    }
+                    
+                    if (Object.keys(dropExpectations).length > 0) {
+                        fullCode += `${tableData.newName}_drop_expectations = {\n`;
+                        Object.entries(dropExpectations).forEach(([key, value], index, array) => {
+                            fullCode += `    "${key}": "${value}"`;
+                            if (index < array.length - 1) fullCode += ',';
+                            fullCode += '\n';
+                        });
+                        fullCode += '}\n\n';
+                    }
+                    
+                    const attributes = tableData.columns.map(col => `"${col.original}"`);
+                    const preservedAttributes = tableData.columns
+                        .filter(col => col.isBoolean)
+                        .map(col => `"${col.original}"`);
+                    const attributesWithNewNames = tableData.columns
+                        .map(col => `("${col.original}", "${col.newName}")`);
+                    
+                    fullCode += `@dlt.table(\n`;
+                    fullCode += `    name="${tableData.newName}",\n`;
+                    fullCode += `    comment="${tableData.description}"\n`;
+                    fullCode += `)\n`;
+                    
+                    if (Object.keys(warnExpectations).length > 0) {
+                        fullCode += `@dlt.expect_all(${tableData.newName}_warn_expectations)\n`;
+                    }
+                    
+                    if (Object.keys(dropExpectations).length > 0) {
+                        fullCode += `@dlt.expect_or_drop(${tableData.newName}_drop_expectations)\n`;
+                    }
+                    
+                    fullCode += `def create_silver_${tableData.newName}_table():\n`;
+                    fullCode += `    attributes = [${attributes.join(', ')}]\n`;
+                    fullCode += `    preserved_attributes = [${preservedAttributes.join(', ')}]\n`;
+                    fullCode += `    attributes_with_new_names = [${attributesWithNewNames.join(', ')}]\n`;
+                    
+                    const booleanColumns = tableData.columns.filter(col => col.isBoolean);
+                    if (booleanColumns.length > 0 && gitConfig.templates['boolean_cleansing']) {
+                        fullCode += `\n    # Boolean Cleansing Logic\n`;
+                        booleanColumns.forEach(col => {
+                            const cleansingCode = gitConfig.templates['boolean_cleansing']
+                                .replace(/\{column_name\}/g, col.original)
+                                .replace(/\{new_column_name\}/g, col.newName);
+                            const indentedCode = cleansingCode.split('\n')
+                                .map(line => line.trim() ? `    ${line}` : '')
+                                .join('\n');
+                            fullCode += indentedCode + '\n';
+                        });
+                    }
+                    
+                    fullCode += `    return\n\n`;
+                });
+                
+                setGeneratedCode(fullCode);
+            };
+
+            const downloadCode = () => {
+                try {
+                    const blob = new Blob([generatedCode], { type: 'text/plain;charset=utf-8' });
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'generated_code.py';
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                    }, 100);
+                } catch (error) {
+                    console.error('Download failed:', error);
+                    const newWindow = window.open('', '_blank');
+                    newWindow.document.write('<pre>' + generatedCode + '</pre>');
+                    newWindow.document.title = 'generated_code.py';
+                }
+            };
+
+            const PatternHelper = ({ value, onChange }) => {
+                const [patternType, setPatternType] = useState('custom');
+                
+                const commonPatterns = {
+                    email: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}',
+                    phone: '\\+?[0-9]{1,3}?[-.\\s]?\\(?[0-9]{1,4}?\\)?[-.\\s]?[0-9]{1,4}[-.\\s]?[0-9]{1,9}',
+                    date: '\\d{4}-\\d{2}-\\d{2}',
+                    alphanumeric: '[a-zA-Z0-9]+',
+                    numeric: '[0-9]+',
+                    alpha: '[a-zA-Z]+',
+                    url: 'https?://[\\w\\.-]+\\.[a-zA-Z]{2,}(/.*)?'
+                };
+                
+                const handlePatternTypeChange = (type) => {
+                    setPatternType(type);
+                    if (type !== 'custom' && commonPatterns[type]) {
+                        onChange(commonPatterns[type]);
+                    }
+                };
+                
+                return (
+                    <div className="pattern-helper">
+                        <select 
+                            className="pattern-select"
+                            value={patternType} 
+                            onChange={(e) => handlePatternTypeChange(e.target.value)}
+                        >
+                            <option value="custom">Benutzerdefiniert</option>
+                            <option value="email">E-Mail</option>
+                            <option value="phone">Telefonnummer</option>
+                            <option value="date">Datum (YYYY-MM-DD)</option>
+                            <option value="numeric">Nur Zahlen</option>
+                            <option value="alpha">Nur Buchstaben</option>
+                            <option value="alphanumeric">Buchstaben und Zahlen</option>
+                            <option value="url">URL</option>
+                        </select>
+                        {patternType === 'custom' && (
+                            <input
+                                type="text"
+                                className="rule-input"
+                                value={value}
+                                onChange={(e) => onChange(e.target.value)}
+                                placeholder="Regulärer Ausdruck..."
+                            />
+                        )}
+                        <div className="pattern-preview">
+                            Pattern: {value || 'Kein Pattern definiert'}
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="app-container">
+                    <div className="header">
+                        <h1>CSV zu Python Code Generator</h1>
+                        <p>Transformieren Sie Ihre Datenbankstrukturen mit Data Quality Checks und Git-Integration</p>
+                    </div>
+                    
+                    <div className="main-content">
+                        <div className="navigation">
+                            <button 
+                                className={`nav-button ${currentPage === 'schema' ? 'active' : ''}`}
+                                onClick={() => setCurrentPage('schema')}
+                            >
+                                📊 Schema-Definition
+                            </button>
+                            <button 
+                                className={`nav-button ${currentPage === 'quality' ? 'active' : ''}`}
+                                onClick={() => setCurrentPage('quality')}
+                                disabled={Object.keys(tables).length === 0}
+                            >
+                                ✅ Data Quality Checks
+                            </button>
+                            <button 
+                                className={`nav-button ${currentPage === 'templates' ? 'active' : ''}`}
+                                onClick={() => setCurrentPage('templates')}
+                            >
+                                🔧 Git Templates
+                            </button>
+                            <button 
+                                className={`nav-button ${currentPage === 'regex' ? 'active' : ''}`}
+                                onClick={() => setCurrentPage('regex')}
+                            >
+                                🔤 Regex Builder
+                            </button>
+                        </div>
+                        
+                        <div className={`page ${currentPage === 'schema' ? 'active' : ''}`}>
+                            <div className={`upload-area ${csvData ? 'has-file' : ''}`}>
+                                <div className="upload-icon">📁</div>
+                                <p style={{fontSize: '18px', marginBottom: '20px'}}>
+                                    {csvData ? `✅ ${csvData.length} Zeilen geladen` : 'CSV-Datei hier hochladen'}
+                                </p>
+                                <label htmlFor="file-upload" className="upload-button">
+                                    {csvData ? 'Neue Datei wählen' : 'Datei auswählen'}
+                                </label>
+                                <input
+                                    id="file-upload"
+                                    type="file"
+                                    accept=".csv"
+                                    onChange={handleFileUpload}
+                                />
+                                {!csvData && (
+                                    <p style={{marginTop: '20px', color: '#718096', fontSize: '14px'}}>
+                                        Erwartetes Format: CSV mit Spalte "table_and_field" (TABELLE-FELD)
+                                    </p>
+                                )}
+                            </div>
+
+                            {Object.keys(tables).length > 0 && (
+                                <>
+                                    {Object.entries(tables).map(([tableName, tableData]) => (
+                                        <div key={tableName} className="table-section">
+                                            <div className="table-header">
+                                                <h2 className="table-name">📋 {tableName}</h2>
+                                            </div>
+                                            
+                                            <div className="table-content">
+                                                <div className="form-group">
+                                                    <label>Neuer Tabellenname:</label>
+                                                    <input
+                                                        type="text"
+                                                        value={tableData.newName}
+                                                        onChange={(e) => updateTableName(tableName, e.target.value)}
+                                                        placeholder="z.B. orders, customers..."
+                                                    />
+                                                </div>
+                                                
+                                                <div className="form-group">
+                                                    <label>Beschreibung:</label>
+                                                    <textarea
+                                                        value={tableData.description}
+                                                        onChange={(e) => updateTableDescription(tableName, e.target.value)}
+                                                        placeholder="Was enthält diese Tabelle? Wofür wird sie verwendet?"
+                                                    />
+                                                </div>
+                                                
+                                                <div className="column-list">
+                                                    <h3>Spalten ({tableData.columns.length})</h3>
+                                                    {tableData.columns.map((column, index) => (
+                                                        <div key={index} className="column-item">
+                                                            <div className="column-original">
+                                                                {column.original}
+                                                            </div>
+                                                            <div className="column-input">
+                                                                <input
+                                                                    type="text"
+                                                                    value={column.newName}
+                                                                    onChange={(e) => updateColumnName(tableName, index, e.target.value)}
+                                                                    placeholder="Neuer Spaltenname..."
+                                                                />
+                                                            </div>
+                                                            <div className="column-options">
+                                                                <div className="checkbox-group">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        id={`bool-${tableName}-${index}`}
+                                                                        checked={column.isBoolean}
+                                                                        onChange={(e) => updateColumnBoolean(tableName, index, e.target.checked)}
+                                                                    />
+                                                                    <label htmlFor={`bool-${tableName}-${index}`}>
+                                                                        Boolean
+                                                                    </label>
+                                                                </div>
+                                                                <div className="checkbox-group">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        id={`mand-${tableName}-${index}`}
+                                                                        checked={column.isMandatory}
+                                                                        onChange={(e) => updateColumnMandatory(tableName, index, e.target.checked)}
+                                                                    />
+                                                                    <label htmlFor={`mand-${tableName}-${index}`}>
+                                                                        Pflichtfeld
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+                        </div>
+                        
+                        <div className={`page ${currentPage === 'quality' ? 'active' : ''}`}>
+                            {Object.entries(tables).map(([tableName, tableData]) => (
+                                <div key={tableName} className="quality-section">
+                                    <div className="quality-header">
+                                        <h2 className="table-name">🛡️ Quality Checks: {tableData.newName}</h2>
+                                    </div>
+                                    
+                                    <div className="quality-content">
+                                        {tableData.columns.map((column) => (
+                                            <div key={column.original} className="attribute-section">
+                                                <div className="attribute-header">
+                                                    <span>{column.original}</span>
+                                                    <span className="attribute-arrow">→</span>
+                                                    <span>{column.newName}</span>
+                                                </div>
+                                                
+                                                {column.isMandatory && (
+                                                    <div className="quality-rule">
+                                                        <div className="rule-header">
+                                                            <div className="rule-type">NOT NULL Check</div>
+                                                            <div className="rule-actions">
+                                                                <div className="radio-group">
+                                                                    <input
+                                                                        type="radio"
+                                                                        id={`warn-${tableName}-${column.original}`}
+                                                                        name={`notNull-${tableName}-${column.original}`}
+                                                                        value="warn"
+                                                                        defaultChecked
+                                                                        onChange={() => {
+                                                                            const existingRule = qualityRules[tableName]?.[column.original]?.find(r => r.type === 'notNull');
+                                                                            if (existingRule) {
+                                                                                updateQualityRule(tableName, column.original, existingRule.id, 'action', 'warn');
+                                                                            } else {
+                                                                                addQualityRule(tableName, column.original, 'notNull');
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    <label htmlFor={`warn-${tableName}-${column.original}`}>
+                                                                        Warnung
+                                                                    </label>
+                                                                </div>
+                                                                <div className="radio-group">
+                                                                    <input
+                                                                        type="radio"
+                                                                        id={`drop-${tableName}-${column.original}`}
+                                                                        name={`notNull-${tableName}-${column.original}`}
+                                                                        value="drop"
+                                                                        onChange={() => {
+                                                                            const existingRule = qualityRules[tableName]?.[column.original]?.find(r => r.type === 'notNull');
+                                                                            if (existingRule) {
+                                                                                updateQualityRule(tableName, column.original, existingRule.id, 'action', 'drop');
+                                                                            } else {
+                                                                                const newRule = {
+                                                                                    id: Date.now(),
+                                                                                    type: 'notNull',
+                                                                                    value: '',
+                                                                                    action: 'drop'
+                                                                                };
+                                                                                setQualityRules(prev => ({
+                                                                                    ...prev,
+                                                                                    [tableName]: {
+                                                                                        ...prev[tableName],
+                                                                                        [column.original]: [...(prev[tableName]?.[column.original] || []), newRule]
+                                                                                    }
+                                                                                }));
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    <label htmlFor={`drop-${tableName}-${column.original}`}>
+                                                                        Verwerfen
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
+                                                {qualityRules[tableName]?.[column.original]?.filter(r => r.type !== 'notNull').map(rule => (
+                                                    <div key={rule.id} className="quality-rule">
+                                                        <div className="rule-header">
+                                                            <div className="rule-type">
+                                                                {rule.type === 'allowedValues' && '✅ Erlaubte Werte'}
+                                                                {rule.type === 'notAllowedValues' && '🚫 Nicht erlaubte Werte'}
+                                                                {rule.type === 'lessThan' && '\u003C Kleiner als'}
+                                                                {rule.type === 'lessOrEqual' && '≤ Kleiner oder gleich'}
+                                                                {rule.type === 'greaterThan' && '\u003E Größer als'}
+                                                                {rule.type === 'greaterOrEqual' && '≥ Größer oder gleich'}
+                                                                {rule.type === 'pattern' && '🔤 Pattern/Regex'}
+                                                            </div>
+                                                            <div className="rule-controls">
+                                                                <div className="rule-actions">
+                                                                    <div className="radio-group">
+                                                                        <input
+                                                                            type="radio"
+                                                                            id={`warn-rule-${rule.id}`}
+                                                                            name={`rule-${rule.id}`}
+                                                                            value="warn"
+                                                                            checked={rule.action === 'warn'}
+                                                                            onChange={() => updateQualityRule(tableName, column.original, rule.id, 'action', 'warn')}
+                                                                        />
+                                                                        <label htmlFor={`warn-rule-${rule.id}`}>
+                                                                            Warnung
+                                                                        </label>
+                                                                    </div>
+                                                                    <div className="radio-group">
+                                                                        <input
+                                                                            type="radio"
+                                                                            id={`drop-rule-${rule.id}`}
+                                                                            name={`rule-${rule.id}`}
+                                                                            value="drop"
+                                                                            checked={rule.action === 'drop'}
+                                                                            onChange={() => updateQualityRule(tableName, column.original, rule.id, 'action', 'drop')}
+                                                                        />
+                                                                        <label htmlFor={`drop-rule-${rule.id}`}>
+                                                                            Verwerfen
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    className="remove-button"
+                                                                    onClick={() => removeQualityRule(tableName, column.original, rule.id)}
+                                                                >
+                                                                    Entfernen
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            {rule.type === 'pattern' ? (
+                                                                <PatternHelper
+                                                                    value={rule.value}
+                                                                    onChange={(value) => updateQualityRule(tableName, column.original, rule.id, 'value', value)}
+                                                                />
+                                                            ) : (
+                                                                <input
+                                                                    type="text"
+                                                                    className="rule-input"
+                                                                    value={rule.value}
+                                                                    onChange={(e) => updateQualityRule(tableName, column.original, rule.id, 'value', e.target.value)}
+                                                                    placeholder={
+                                                                        rule.type.includes('Values') 
+                                                                            ? 'Werte kommagetrennt eingeben (z.B. A, B, C)'
+                                                                            : 'Wert eingeben...'
+                                                                    }
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                
+                                                <select 
+                                                    className="add-rule-select"
+                                                    onChange={(e) => {
+                                                        if (e.target.value) {
+                                                            addQualityRule(tableName, column.original, e.target.value);
+                                                            e.target.value = '';
+                                                        }
+                                                    }}
+                                                    defaultValue=""
+                                                >
+                                                    <option value="">➕ Regel hinzufügen...</option>
+                                                    <option value="allowedValues">✅ Erlaubte Werte</option>
+                                                    <option value="notAllowedValues">🚫 Nicht erlaubte Werte</option>
+                                                    <option value="lessThan">&lt; Kleiner als</option>
+                                                    <option value="lessOrEqual">≤ Kleiner oder gleich</option>
+                                                    <option value="greaterThan">&gt; Größer als</option>
+                                                    <option value="greaterOrEqual">≥ Größer oder gleich</option>
+                                                    <option value="pattern">🔤 Pattern/Regex</option>
+                                                </select>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className={`page ${currentPage === 'templates' ? 'active' : ''}`}>
+                            <div className="git-section">
+                                <h2>Git Repository Konfiguration</h2>
+                                <p className="git-description">
+                                    Verbinden Sie Ihr Git-Repository mit Cleansing-Templates. 
+                                    Diese werden automatisch in den generierten Code eingefügt.
+                                </p>
+                                
+                                <div className="form-group">
+                                    <label>Repository URL:</label>
+                                    <input
+                                        type="text"
+                                        value={gitConfig.repoUrl}
+                                        onChange={(e) => setGitConfig(prev => ({ ...prev, repoUrl: e.target.value }))}
+                                        placeholder="https://github.com/username/repo"
+                                    />
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label>Branch:</label>
+                                    <input
+                                        type="text"
+                                        value={gitConfig.branch}
+                                        onChange={(e) => setGitConfig(prev => ({ ...prev, branch: e.target.value }))}
+                                        placeholder="main"
+                                    />
+                                </div>
+                                
+                                <div className="button-group">
+                                    <button className="primary-button" onClick={fetchTemplates}>
+                                        📥 Templates laden
+                                    </button>
+                                    <button className="secondary-button" onClick={saveGitConfig}>
+                                        💾 Konfiguration speichern
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div style={{marginTop: '32px'}}>
+                                <h3>Verfügbare Templates</h3>
+                                {Object.keys(gitConfig.templates).length === 0 ? (
+                                    <div className="status-message info">
+                                        Noch keine Templates geladen. Konfigurieren Sie oben Ihr Repository.
+                                    </div>
+                                ) : (
+                                    Object.entries(gitConfig.templates).map(([name, code]) => (
+                                        <div key={name} className="template-item">
+                                            <div className="template-name">📄 {name}.py</div>
+                                            <div className="template-code">{code}</div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                            
+                            <div className="help-section">
+                                <h4>📚 Anleitung</h4>
+                                <ol>
+                                    <li>Erstellen Sie einen Ordner <code>cleansing_templates</code> in Ihrem Repository</li>
+                                    <li>Fügen Sie Python-Dateien mit Cleansing-Logik hinzu (z.B. <code>boolean_cleansing.py</code>)</li>
+                                    <li>Verwenden Sie Platzhalter: <code>{`{column_name}`}</code> und <code>{`{new_column_name}`}</code></li>
+                                    <li>Templates werden automatisch für entsprechende Attribute eingefügt</li>
+                                </ol>
+                                
+                                <h4 style={{marginTop: '24px'}}>Beispiel Template:</h4>
+                                <div className="help-code">
+{`# Cleansing logic for {column_name}
+df['{new_column_name}'] = df['{column_name}'].apply(
+    lambda x: True if x in ['Y', 'yes', '1', 'true', 'True'] else 
+              False if x in ['N', 'no', '0', 'false', 'False'] else None
+)`}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className={`page ${currentPage === 'regex' ? 'active' : ''}`}>
+                            <RegexBuilder />
+                        </div>
+
+                        {Object.keys(tables).length > 0 && (
+                            <div className="generate-section">
+                                <button 
+                                    className="generate-button" 
+                                    onClick={generatePythonCode}
+                                >
+                                    🚀 Python Code generieren
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {generatedCode && (
+                        <div className="code-output">
+                            <div className="code-header">
+                                <h2>Generierter Python Code</h2>
+                                <button 
+                                    className="download-button" 
+                                    onClick={downloadCode}
+                                >
+                                    📥 Download .py
+                                </button>
+                            </div>
+                            <div className="code-content">{generatedCode}</div>
+                            <p style={{
+                                padding: '16px',
+                                fontSize: '14px',
+                                color: '#718096',
+                                borderTop: '1px solid #2d3748',
+                                margin: 0
+                            }}>
+                                💡 Tipp: Falls der Download nicht funktioniert, können Sie den Code oben markieren und kopieren.
+                            </p>
+                        </div>
+                    )}
+                    
+                    <ChatAssistant tables={tables} />
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV zu Python Code Generator - Basis</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: #4CAF50;
+            background: #f9f9f9;
+        }
+        
+        .upload-area.has-file {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .button:hover {
+            background: #45a049;
+        }
+        
+        .button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .table-section {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .table-header {
+            background: #f5f5f5;
+            margin: -20px -20px 20px -20px;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .column-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .column-original {
+            font-family: monospace;
+            background: #333;
+            color: #4CAF50;
+            padding: 5px 10px;
+            border-radius: 4px;
+            min-width: 150px;
+        }
+        
+        .column-input {
+            flex: 1;
+        }
+        
+        .column-input input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .checkbox-group input {
+            width: auto;
+        }
+        
+        .code-output {
+            margin-top: 30px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .code-header {
+            background: #333;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .code-content {
+            background: #1e1e1e;
+            color: #4CAF50;
+            padding: 20px;
+            font-family: monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            white-space: pre;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            position: relative;
+        }
+        
+        .tab:hover {
+            background: #f5f5f5;
+        }
+        
+        .tab.active {
+            color: #4CAF50;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #4CAF50;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .generate-button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            display: block;
+            margin: 30px auto;
+        }
+        
+        .generate-button:hover {
+            background: #1976D2;
+        }
+        
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useCallback } = React;
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('upload');
+            const [csvData, setCsvData] = useState(null);
+            const [tables, setTables] = useState({});
+            const [generatedCode, setGeneratedCode] = useState('');
+            const [error, setError] = useState('');
+            const [success, setSuccess] = useState('');
+
+            const handleFileUpload = useCallback((event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    setError('');
+                    setSuccess('');
+                    
+                    Papa.parse(file, {
+                        complete: (results) => {
+                            try {
+                                processCsvData(results.data);
+                                setSuccess(`Erfolgreich ${results.data.length} Zeilen geladen!`);
+                                setActiveTab('schema');
+                            } catch (err) {
+                                setError('Fehler beim Verarbeiten der CSV-Datei: ' + err.message);
+                            }
+                        },
+                        header: true,
+                        skipEmptyLines: true,
+                        error: (err) => {
+                            setError('Fehler beim Lesen der CSV-Datei: ' + err.message);
+                        }
+                    });
+                }
+            }, []);
+
+            const processCsvData = (data) => {
+                const tableData = {};
+                
+                data.forEach(row => {
+                    if (row.table_and_field) {
+                        const parts = row.table_and_field.split('-');
+                        if (parts.length >= 2) {
+                            const tableName = parts[0];
+                            const fieldName = parts.slice(1).join('-'); // Falls Feldname "-" enthält
+                            
+                            if (!tableData[tableName]) {
+                                tableData[tableName] = {
+                                    originalName: tableName,
+                                    newName: tableName.toLowerCase(),
+                                    description: '',
+                                    columns: []
+                                };
+                            }
+                            
+                            if (!tableData[tableName].columns.find(col => col.original === fieldName)) {
+                                tableData[tableName].columns.push({
+                                    original: fieldName,
+                                    newName: fieldName.toLowerCase(),
+                                    isBoolean: false,
+                                    isMandatory: false
+                                });
+                            }
+                        }
+                    }
+                });
+                
+                setTables(tableData);
+                setCsvData(data);
+            };
+
+            const updateTableName = (tableName, newName) => {
+                setTables(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        newName: newName
+                    }
+                }));
+            };
+
+            const updateTableDescription = (tableName, description) => {
+                setTables(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        description: description
+                    }
+                }));
+            };
+
+            const updateColumnName = (tableName, columnIndex, newName) => {
+                setTables(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        columns: prev[tableName].columns.map((col, idx) => 
+                            idx === columnIndex ? { ...col, newName: newName } : col
+                        )
+                    }
+                }));
+            };
+
+            const updateColumnBoolean = (tableName, columnIndex, isBoolean) => {
+                setTables(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        columns: prev[tableName].columns.map((col, idx) => 
+                            idx === columnIndex ? { ...col, isBoolean: isBoolean } : col
+                        )
+                    }
+                }));
+            };
+
+            const updateColumnMandatory = (tableName, columnIndex, isMandatory) => {
+                setTables(prev => ({
+                    ...prev,
+                    [tableName]: {
+                        ...prev[tableName],
+                        columns: prev[tableName].columns.map((col, idx) => 
+                            idx === columnIndex ? { ...col, isMandatory: isMandatory } : col
+                        )
+                    }
+                }));
+            };
+
+            const generatePythonCode = () => {
+                let code = '# Generated Python Code for Delta Live Tables\n\n';
+                code += 'import dlt\n\n';
+                
+                Object.entries(tables).forEach(([tableName, tableData]) => {
+                    // Table decorator
+                    code += `@dlt.table(\n`;
+                    code += `    name="${tableData.newName}",\n`;
+                    code += `    comment="${tableData.description || 'No description provided'}"\n`;
+                    code += `)\n`;
+                    
+                    // Function definition
+                    code += `def create_${tableData.newName}_table():\n`;
+                    
+                    // Attributes
+                    const attributes = tableData.columns.map(col => `"${col.original}"`);
+                    code += `    attributes = [${attributes.join(', ')}]\n`;
+                    
+                    // Boolean attributes
+                    const booleanAttributes = tableData.columns
+                        .filter(col => col.isBoolean)
+                        .map(col => `"${col.original}"`);
+                    if (booleanAttributes.length > 0) {
+                        code += `    boolean_attributes = [${booleanAttributes.join(', ')}]\n`;
+                    }
+                    
+                    // Mandatory attributes
+                    const mandatoryAttributes = tableData.columns
+                        .filter(col => col.isMandatory)
+                        .map(col => `"${col.original}"`);
+                    if (mandatoryAttributes.length > 0) {
+                        code += `    mandatory_attributes = [${mandatoryAttributes.join(', ')}]\n`;
+                    }
+                    
+                    // Renamed attributes
+                    code += `    renamed_columns = {\n`;
+                    tableData.columns.forEach(col => {
+                        if (col.original !== col.newName) {
+                            code += `        "${col.original}": "${col.newName}",\n`;
+                        }
+                    });
+                    code += `    }\n`;
+                    
+                    code += `    \n`;
+                    code += `    # TODO: Add your transformation logic here\n`;
+                    code += `    return spark.table("source_table")\n`;
+                    code += `\n\n`;
+                });
+                
+                setGeneratedCode(code);
+                setSuccess('Code erfolgreich generiert!');
+            };
+
+            const downloadCode = () => {
+                const blob = new Blob([generatedCode], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'generated_code.py';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>CSV zu Python Code Generator</h1>
+                        <p>Transformieren Sie CSV-Strukturen in Python Code</p>
+                    </div>
+
+                    {error && <div className="error-message">{error}</div>}
+                    {success && <div className="success-message">{success}</div>}
+
+                    <div className="tabs">
+                        <button 
+                            className={`tab ${activeTab === 'upload' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('upload')}
+                        >
+                            1. Upload
+                        </button>
+                        <button 
+                            className={`tab ${activeTab === 'schema' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('schema')}
+                            disabled={!csvData}
+                        >
+                            2. Schema Definition
+                        </button>
+                        <button 
+                            className={`tab ${activeTab === 'generate' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('generate')}
+                            disabled={!csvData}
+                        >
+                            3. Code Generation
+                        </button>
+                    </div>
+
+                    <div className={`tab-content ${activeTab === 'upload' ? 'active' : ''}`}>
+                        <div className={`upload-area ${csvData ? 'has-file' : ''}`}>
+                            <h2>CSV Datei hochladen</h2>
+                            <p>{csvData ? `✓ ${csvData.length} Zeilen geladen` : 'Klicken Sie hier oder ziehen Sie eine Datei herein'}</p>
+                            <label htmlFor="file-upload" className="button">
+                                Datei auswählen
+                            </label>
+                            <input
+                                id="file-upload"
+                                type="file"
+                                accept=".csv"
+                                onChange={handleFileUpload}
+                            />
+                            <p style={{marginTop: '20px', fontSize: '14px', color: '#666'}}>
+                                Erwartetes Format: CSV mit Spalte "table_and_field" (Format: TABELLE-FELD)
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className={`tab-content ${activeTab === 'schema' ? 'active' : ''}`}>
+                        {Object.entries(tables).map(([tableName, tableData]) => (
+                            <div key={tableName} className="table-section">
+                                <div className="table-header">
+                                    Tabelle: {tableName}
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label>Neuer Tabellenname:</label>
+                                    <input
+                                        type="text"
+                                        value={tableData.newName}
+                                        onChange={(e) => updateTableName(tableName, e.target.value)}
+                                    />
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label>Beschreibung:</label>
+                                    <textarea
+                                        value={tableData.description}
+                                        onChange={(e) => updateTableDescription(tableName, e.target.value)}
+                                        rows="2"
+                                    />
+                                </div>
+                                
+                                <h3>Spalten ({tableData.columns.length})</h3>
+                                {tableData.columns.map((column, index) => (
+                                    <div key={index} className="column-item">
+                                        <div className="column-original">
+                                            {column.original}
+                                        </div>
+                                        <div className="column-input">
+                                            <input
+                                                type="text"
+                                                value={column.newName}
+                                                onChange={(e) => updateColumnName(tableName, index, e.target.value)}
+                                                placeholder="Neuer Spaltenname"
+                                            />
+                                        </div>
+                                        <div className="checkbox-group">
+                                            <input
+                                                type="checkbox"
+                                                id={`bool-${tableName}-${index}`}
+                                                checked={column.isBoolean}
+                                                onChange={(e) => updateColumnBoolean(tableName, index, e.target.checked)}
+                                            />
+                                            <label htmlFor={`bool-${tableName}-${index}`}>Boolean</label>
+                                        </div>
+                                        <div className="checkbox-group">
+                                            <input
+                                                type="checkbox"
+                                                id={`mand-${tableName}-${index}`}
+                                                checked={column.isMandatory}
+                                                onChange={(e) => updateColumnMandatory(tableName, index, e.target.checked)}
+                                            />
+                                            <label htmlFor={`mand-${tableName}-${index}`}>Pflichtfeld</label>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className={`tab-content ${activeTab === 'generate' ? 'active' : ''}`}>
+                        <button className="generate-button" onClick={generatePythonCode}>
+                            Code generieren
+                        </button>
+                        
+                        {generatedCode && (
+                            <div className="code-output">
+                                <div className="code-header">
+                                    <h3>Generierter Python Code</h3>
+                                    <button className="button" onClick={downloadCode}>
+                                        Download
+                                    </button>
+                                </div>
+                                <div className="code-content">{generatedCode}</div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

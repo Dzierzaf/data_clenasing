@@ -1,0 +1,2496 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DQX Check Creator - Enhanced</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1976d2;
+            --primary-dark: #1565c0;
+            --primary-light: #e3f2fd;
+            --secondary: #f50057;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --error: #f44336;
+            --background: #f5f5f5;
+            --surface: #ffffff;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+            --border: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--surface);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1400px;
+            margin: 0 auto;
+            overflow: hidden;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .wizard-steps {
+            display: flex;
+            justify-content: center;
+            padding: 30px 20px 20px;
+            background: #fafafa;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-number {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .step.completed .step-number {
+            background: var(--success);
+            color: white;
+        }
+
+        .step-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .step.active .step-label {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 40px;
+            min-height: 500px;
+        }
+
+        .step-content {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        }
+
+        .file-upload {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #fafafa;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary);
+            background: #f0f7ff;
+        }
+
+        .file-upload.dragover {
+            border-color: var(--primary);
+            background: #e3f2fd;
+            transform: scale(1.02);
+        }
+
+        .uploaded-files {
+            margin-top: 20px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .file-details {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .remove-file {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .remove-file:hover {
+            background: #d32f2f;
+            transform: scale(1.05);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(25, 118, 210, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Check Builder Styles */
+        .check-builder {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 30px;
+            min-height: 400px;
+        }
+
+        .column-list {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .column-list h3 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .column-item-selectable {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .column-item-selectable:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .column-item-selectable.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .column-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .column-badge {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+
+        .check-configuration {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .check-queue {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .queued-check {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .queued-check-info {
+            flex: 1;
+        }
+
+        .queued-check-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .queued-check-details {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        /* Check Type Grid */
+        .check-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .check-type-pill {
+            padding: 10px 15px;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            background: white;
+            font-size: 0.9rem;
+        }
+
+        .check-type-pill:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .check-type-pill.selected {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Structured Description */
+        .description-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        /* Check Matrix Visualization */
+        .matrix-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .check-matrix {
+            min-width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .check-matrix th,
+        .check-matrix td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+
+        .check-matrix th {
+            background: var(--primary);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .check-matrix tr:hover {
+            background: #f5f5f5;
+        }
+
+        .check-cell {
+            text-align: center;
+        }
+
+        .check-indicator {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            line-height: 24px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .check-indicator.error {
+            background: var(--error);
+        }
+
+        .check-indicator.warn {
+            background: var(--warning);
+        }
+
+        /* Summary Statistics */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .filter-group {
+            flex: 1;
+        }
+
+        .filter-group label {
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .filter-group select {
+            width: 100%;
+            padding: 8px;
+            font-size: 0.9rem;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: var(--success);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideInRight 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        .toast.error {
+            background: var(--error);
+        }
+
+        .toast.warning {
+            background: var(--warning);
+        }
+
+        /* Structured Fields */
+        .structured-field {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .structured-field h4 {
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        /* Visualization Card */
+        .viz-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .viz-card h3 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        /* Detail View Cards */
+        .detail-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .detail-card:hover {
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .detail-card-header {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .detail-card-header.error {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        }
+
+        .detail-card-header.warn {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+
+        .detail-card-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .detail-card-icon {
+            font-size: 1.5rem;
+        }
+
+        .detail-card-main {
+            flex: 1;
+        }
+
+        .detail-card-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .detail-card-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .detail-card-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: white;
+        }
+
+        .detail-card-badge.error {
+            color: var(--error);
+            background: white;
+        }
+
+        .detail-card-badge.warn {
+            color: var(--warning);
+            background: white;
+        }
+
+        .detail-card-expand {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+            margin-left: 15px;
+        }
+
+        .detail-card-expand.expanded {
+            transform: rotate(180deg);
+        }
+
+        .detail-card-body {
+            display: none;
+            padding: 20px;
+            background: #fafafa;
+        }
+
+        .detail-card-body.expanded {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .detail-section {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-section-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .detail-code {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .group-header {
+            background: var(--primary);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 20px 0 15px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .group-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+
+        /* Progress Indicator */
+        .progress-bar {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.5s ease;
+        }
+
+        @media (max-width: 768px) {
+            .check-builder {
+                grid-template-columns: 1fr;
+            }
+            
+            .description-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .wizard-steps {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 DQX Data Quality Check Creator</h1>
+            <p>Batch-Erstellung von Data Quality Checks für Databricks Labs DQX</p>
+        </div>
+
+        <div class="wizard-steps">
+            <div class="step active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-label">Daten laden</div>
+            </div>
+            <div class="step" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-label">Checks erstellen</div>
+            </div>
+            <div class="step" data-step="3">
+                <div class="step-number">3</div>
+                <div class="step-label">Metadaten</div>
+            </div>
+            <div class="step" data-step="4">
+                <div class="step-number">4</div>
+                <div class="step-label">Visualisierung</div>
+            </div>
+            <div class="step" data-step="5">
+                <div class="step-number">5</div>
+                <div class="step-label">Export</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Step 1: Data Upload -->
+            <div class="step-content active" data-step="1">
+                <h2>Schritt 1: Tabellen-Metadaten laden</h2>
+                <p style="margin-bottom: 20px; color: var(--text-secondary);">
+                    Laden Sie eine oder mehrere CSV-Dateien mit Tabellen-Metadaten hoch. 
+                    Format: [Tabellenname]-[Attributname]
+                </p>
+
+                <div class="file-upload" id="fileUploadArea">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
+                    <p style="font-size: 1.1rem; margin-bottom: 10px;">
+                        Dateien hier ablegen oder klicken zum Auswählen
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                        Unterstützt: CSV-Dateien
+                    </p>
+                    <input type="file" id="fileInput" accept=".csv" multiple style="display: none;">
+                </div>
+
+                <div class="uploaded-files" id="uploadedFiles"></div>
+
+                <div class="button-group">
+                    <div></div>
+                    <button class="btn btn-primary" onclick="nextStep()" disabled id="step1NextBtn">
+                        Weiter →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Check Builder -->
+            <div class="step-content" data-step="2">
+                <h2>Schritt 2: Checks erstellen</h2>
+                <p style="margin-bottom: 20px; color: var(--text-secondary);">
+                    Wählen Sie Spalten aus und fügen Sie beliebig viele Checks hinzu
+                </p>
+
+                <div class="check-builder">
+                    <div class="column-list">
+                        <h3>📊 Verfügbare Spalten</h3>
+                        <div id="columnList">
+                            <!-- Will be populated with columns -->
+                        </div>
+                    </div>
+
+                    <div class="check-configuration">
+                        <h3 id="selectedColumnTitle">Wählen Sie eine Spalte aus</h3>
+                        
+                        <div id="checkTypeSelection" style="display: none;">
+                            <label>Check-Typ auswählen:</label>
+                            <div class="check-type-grid" id="checkTypeGrid">
+                                <!-- Will be populated with check types -->
+                            </div>
+
+                            <div id="checkParameters" style="margin-top: 20px;">
+                                <!-- Will be populated based on selected check type -->
+                            </div>
+
+                            <button class="btn btn-primary" onclick="addCheckToQueue()" style="margin-top: 20px;">
+                                ➕ Check hinzufügen
+                            </button>
+                        </div>
+
+                        <div class="check-queue">
+                            <h4>📋 Erstellte Checks (<span id="checkCount">0</span>)</h4>
+                            <div id="queuedChecks">
+                                <!-- Will be populated with queued checks -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">
+                        ← Zurück
+                    </button>
+                    <button class="btn btn-primary" onclick="nextStep()" disabled id="step2NextBtn">
+                        Weiter →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Metadata -->
+            <div class="step-content" data-step="3">
+                <h2>Schritt 3: Metadaten & Verantwortlichkeiten</h2>
+                <p style="margin-bottom: 20px; color: var(--text-secondary);">
+                    Strukturierte Erfassung von Metadaten für alle Checks
+                </p>
+
+                <div class="structured-field">
+                    <h4>📝 Geschäftskontext</h4>
+                    <div class="description-grid">
+                        <div class="form-group">
+                            <label>Datendomäne <span style="color: var(--error);">*</span></label>
+                            <select id="dataDomain" required>
+                                <option value="">-- Bitte wählen --</option>
+                                <option value="customer">Kundendaten</option>
+                                <option value="product">Produktdaten</option>
+                                <option value="transaction">Transaktionsdaten</option>
+                                <option value="finance">Finanzdaten</option>
+                                <option value="hr">HR-Daten</option>
+                                <option value="marketing">Marketing-Daten</option>
+                                <option value="operations">Betriebsdaten</option>
+                                <option value="other">Sonstige</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Geschäftsprozess <span style="color: var(--error);">*</span></label>
+                            <input type="text" id="businessProcess" placeholder="z.B. Kundenregistrierung" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Datenqualitätsziel <span style="color: var(--error);">*</span></label>
+                            <select id="qualityGoal" required>
+                                <option value="">-- Bitte wählen --</option>
+                                <option value="completeness">Vollständigkeit sicherstellen</option>
+                                <option value="accuracy">Genauigkeit gewährleisten</option>
+                                <option value="consistency">Konsistenz prüfen</option>
+                                <option value="validity">Gültigkeit validieren</option>
+                                <option value="uniqueness">Eindeutigkeit sichern</option>
+                                <option value="timeliness">Aktualität prüfen</option>
+                                <option value="compliance">Compliance sicherstellen</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Auswirkung bei Fehler <span style="color: var(--error);">*</span></label>
+                            <select id="errorImpact" required>
+                                <option value="">-- Bitte wählen --</option>
+                                <option value="critical">Kritisch - Geschäftsprozess blockiert</option>
+                                <option value="high">Hoch - Erhebliche Auswirkungen</option>
+                                <option value="medium">Mittel - Moderate Auswirkungen</option>
+                                <option value="low">Niedrig - Geringe Auswirkungen</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="structured-field">
+                    <h4>👥 Verantwortlichkeiten</h4>
+                    <div class="description-grid">
+                        <div class="form-group">
+                            <label>Data Steward <span style="color: var(--error);">*</span></label>
+                            <input type="email" id="dataSteward" placeholder="max.mustermann@firma.de" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Technischer Ansprechpartner</label>
+                            <input type="email" id="technicalContact" placeholder="tech.support@firma.de">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Abteilung/Team <span style="color: var(--error);">*</span></label>
+                            <input type="text" id="department" placeholder="z.B. Data Quality Team" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Kostenstelle</label>
+                            <input type="text" id="costCenter" placeholder="z.B. 4711">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="structured-field">
+                    <h4>⚙️ Technische Details</h4>
+                    <div class="description-grid">
+                        <div class="form-group">
+                            <label>SLA (Service Level Agreement)</label>
+                            <select id="sla">
+                                <option value="">-- Optional --</option>
+                                <option value="99.9">99.9% - Mission Critical</option>
+                                <option value="99.5">99.5% - Business Critical</option>
+                                <option value="99">99% - Standard</option>
+                                <option value="95">95% - Best Effort</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Prüffrequenz</label>
+                            <select id="checkFrequency">
+                                <option value="">-- Optional --</option>
+                                <option value="realtime">Echtzeit</option>
+                                <option value="hourly">Stündlich</option>
+                                <option value="daily">Täglich</option>
+                                <option value="weekly">Wöchentlich</option>
+                                <option value="monthly">Monatlich</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Run Config Name</label>
+                            <input type="text" id="runConfigName" placeholder="default" value="default">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Benachrichtigung bei Fehler</label>
+                            <select id="notificationLevel">
+                                <option value="">-- Optional --</option>
+                                <option value="immediate">Sofort</option>
+                                <option value="summary">Zusammenfassung</option>
+                                <option value="none">Keine</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">
+                        ← Zurück
+                    </button>
+                    <button class="btn btn-primary" onclick="validateMetadataAndNext()">
+                        Weiter →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Visualization -->
+            <div class="step-content" data-step="4">
+                <h2>Schritt 4: Check-Visualisierung & Validierung</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalChecksCount">0</div>
+                        <div class="stat-label">Gesamt Checks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="errorChecksCount">0</div>
+                        <div class="stat-label">Error Checks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="warnChecksCount">0</div>
+                        <div class="stat-label">Warning Checks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="coveredColumnsCount">0</div>
+                        <div class="stat-label">Abgedeckte Spalten</div>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('matrix')">Matrix-Ansicht</button>
+                    <button class="tab" onclick="switchTab('list')">Listen-Ansicht</button>
+                    <button class="tab" onclick="switchTab('coverage')">Abdeckungsanalyse</button>
+                </div>
+
+                <div class="tab-content active" id="matrixTab">
+                    <div class="filter-bar">
+                        <div class="filter-group">
+                            <label>Tabelle filtern:</label>
+                            <select id="tableFilter" onchange="applyFilters()">
+                                <option value="">Alle Tabellen</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Check-Typ filtern:</label>
+                            <select id="checkTypeFilter" onchange="applyFilters()">
+                                <option value="">Alle Check-Typen</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Kritikalität:</label>
+                            <select id="criticalityFilter" onchange="applyFilters()">
+                                <option value="">Alle</option>
+                                <option value="error">Nur Error</option>
+                                <option value="warn">Nur Warning</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="viz-card">
+                        <h3>📊 Check-Matrix</h3>
+                        <div class="matrix-container">
+                            <table class="check-matrix" id="checkMatrix">
+                                <!-- Will be populated dynamically -->
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="listTab">
+                    <div class="viz-card">
+                        <h3>📋 Detaillierte Check-Liste</h3>
+                        <div id="detailedCheckList">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="detailTab">
+                    <div class="filter-bar">
+                        <div class="filter-group">
+                            <label>Suche:</label>
+                            <input type="text" id="searchInput" placeholder="Check suchen..." onkeyup="filterDetailView()">
+                        </div>
+                        <div class="filter-group">
+                            <label>Gruppierung:</label>
+                            <select id="groupBySelect" onchange="renderDetailView()">
+                                <option value="column">Nach Spalte</option>
+                                <option value="type">Nach Check-Typ</option>
+                                <option value="criticality">Nach Kritikalität</option>
+                                <option value="table">Nach Tabelle</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="viz-card">
+                        <h3>🔍 Check-Detailansicht</h3>
+                        <div id="checkDetailView">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="coverageTab">
+                    <div class="viz-card">
+                        <h3>📈 Abdeckungsanalyse</h3>
+                        <div id="coverageAnalysis">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">
+                        ← Zurück
+                    </button>
+                    <button class="btn btn-warning" onclick="goBackToCheckBuilder()">
+                        ✏️ Checks bearbeiten
+                    </button>
+                    <button class="btn btn-primary" onclick="nextStep()">
+                        Weiter →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 5: Export -->
+            <div class="step-content" data-step="5">
+                <h2>Schritt 5: Export</h2>
+                
+                <div class="viz-card">
+                    <h3>📋 Zusammenfassung</h3>
+                    <p>Sie haben <strong id="finalCheckCount">0</strong> Data Quality Checks erstellt.</p>
+                    <div id="checkSummary" style="margin-top: 20px;">
+                        <!-- Will be populated with summary -->
+                    </div>
+                </div>
+
+                <div class="viz-card">
+                    <h3>💾 JSON Export</h3>
+                    <p style="margin-bottom: 15px;">Die Checks sind bereit für den Export im DQX-Format.</p>
+                    
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <code id="jsonPreview" style="white-space: pre-wrap; font-size: 0.85rem;">
+                            <!-- JSON Preview -->
+                        </code>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-success" onclick="exportJSON()">
+                            📥 JSON herunterladen
+                        </button>
+                        <button class="btn btn-primary" onclick="copyToClipboard()">
+                            📋 In Zwischenablage kopieren
+                        </button>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">
+                        ← Zurück
+                    </button>
+                    <button class="btn btn-primary" onclick="startNew()">
+                        🔄 Neue Checks erstellen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <script>
+        // Global state
+        let currentStep = 1;
+        let uploadedData = [];
+        let allColumns = [];
+        let selectedColumn = null;
+        let selectedCheckType = null;
+        let queuedChecks = [];
+        let metadata = {};
+
+        // Check types definition
+        const checkTypes = [
+            {
+                id: 'is_not_null',
+                name: 'Nicht NULL',
+                description: 'Prüft ob Werte nicht NULL sind',
+                category: 'completeness',
+                parameters: []
+            },
+            {
+                id: 'is_not_null_and_not_empty',
+                name: 'Nicht leer',
+                description: 'Weder NULL noch leer',
+                category: 'completeness',
+                parameters: []
+            },
+            {
+                id: 'is_in_list',
+                name: 'In Liste',
+                description: 'Wert in definierter Liste',
+                category: 'validity',
+                parameters: ['allowed']
+            },
+            {
+                id: 'is_not_in_list',
+                name: 'Nicht in Liste',
+                description: 'Wert nicht in Liste',
+                category: 'validity',
+                parameters: ['forbidden']
+            },
+            {
+                id: 'is_greater_than',
+                name: 'Größer als',
+                description: 'Wert größer als Limit',
+                category: 'validity',
+                parameters: ['limit']
+            },
+            {
+                id: 'is_less_than',
+                name: 'Kleiner als',
+                description: 'Wert kleiner als Limit',
+                category: 'validity',
+                parameters: ['limit']
+            },
+            {
+                id: 'is_between',
+                name: 'Zwischen',
+                description: 'Wert zwischen Grenzen',
+                category: 'validity',
+                parameters: ['min', 'max']
+            },
+            {
+                id: 'matches_regex',
+                name: 'Regex',
+                description: 'Entspricht Muster',
+                category: 'validity',
+                parameters: ['pattern']
+            },
+            {
+                id: 'is_unique',
+                name: 'Eindeutig',
+                description: 'Eindeutige Werte',
+                category: 'uniqueness',
+                parameters: [],
+                isDatasetCheck: true
+            },
+            {
+                id: 'is_valid_email',
+                name: 'E-Mail',
+                description: 'Gültige E-Mail',
+                category: 'validity',
+                parameters: []
+            },
+            {
+                id: 'is_valid_date',
+                name: 'Datum',
+                description: 'Gültiges Datum',
+                category: 'validity',
+                parameters: ['format']
+            }
+        ];
+
+        // Initialize file upload
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        fileUploadArea.addEventListener('click', () => fileInput.click());
+        
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.add('dragover');
+        });
+
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.classList.remove('dragover');
+        });
+
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+                    parseCSV(file);
+                } else {
+                    showToast('Nur CSV-Dateien sind erlaubt', 'error');
+                }
+            });
+        }
+
+        function parseCSV(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                const lines = content.trim().split('\n');
+                const headers = lines[0].split(',').map(h => h.trim());
+                
+                if (!headers.includes('table_and_field')) {
+                    showToast(`Datei ${file.name}: Spalte "table_and_field" nicht gefunden`, 'error');
+                    return;
+                }
+
+                const data = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',').map(v => v.trim());
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index];
+                    });
+                    if (row.table_and_field) {
+                        data.push(row);
+                    }
+                }
+
+                // Check for duplicates
+                const newColumns = data.map(d => d.table_and_field);
+                const duplicates = newColumns.filter(col => 
+                    allColumns.includes(col)
+                );
+
+                if (duplicates.length > 0) {
+                    showToast(`Duplikate gefunden: ${duplicates.join(', ')}`, 'error');
+                    return;
+                }
+
+                uploadedData.push({
+                    fileName: file.name,
+                    data: data,
+                    columns: newColumns
+                });
+
+                allColumns = [...allColumns, ...newColumns];
+                displayUploadedFiles();
+                document.getElementById('step1NextBtn').disabled = false;
+                showToast(`${file.name} erfolgreich geladen`, 'success');
+            };
+            reader.readAsText(file);
+        }
+
+        function displayUploadedFiles() {
+            const container = document.getElementById('uploadedFiles');
+            container.innerHTML = '<h3 style="margin-top: 30px; margin-bottom: 15px;">Geladene Dateien:</h3>';
+            
+            uploadedData.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-icon">📄</div>
+                    <div class="file-info">
+                        <div class="file-name">${file.fileName}</div>
+                        <div class="file-details">${file.columns.length} Spalten gefunden</div>
+                    </div>
+                    <button class="remove-file" onclick="removeFile(${index})">Entfernen</button>
+                `;
+                container.appendChild(fileItem);
+            });
+        }
+
+        function removeFile(index) {
+            const file = uploadedData[index];
+            allColumns = allColumns.filter(col => !file.columns.includes(col));
+            uploadedData.splice(index, 1);
+            displayUploadedFiles();
+            
+            if (uploadedData.length === 0) {
+                document.getElementById('step1NextBtn').disabled = true;
+            }
+        }
+
+        // Check Builder Functions
+        function renderColumnList() {
+            const container = document.getElementById('columnList');
+            container.innerHTML = '';
+
+            // Group columns by table
+            const tableGroups = {};
+            allColumns.forEach(col => {
+                const [table, field] = col.split('-');
+                if (!tableGroups[table]) {
+                    tableGroups[table] = [];
+                }
+                tableGroups[table].push({ full: col, field: field });
+            });
+
+            Object.keys(tableGroups).sort().forEach(table => {
+                const tableSection = document.createElement('div');
+                tableSection.innerHTML = `<h4 style="margin: 15px 0 10px; color: var(--primary);">${table}</h4>`;
+                
+                tableGroups[table].forEach(col => {
+                    const checkCount = queuedChecks.filter(c => 
+                        c.column === col.full || 
+                        (c.columns && c.columns.includes(col.full))
+                    ).length;
+
+                    const columnItem = document.createElement('div');
+                    columnItem.className = 'column-item-selectable';
+                    if (selectedColumn === col.full) {
+                        columnItem.classList.add('selected');
+                    }
+                    columnItem.onclick = () => selectColumn(col.full);
+                    columnItem.innerHTML = `
+                        <span class="column-name">${col.field}</span>
+                        ${checkCount > 0 ? `<span class="column-badge">${checkCount}</span>` : ''}
+                    `;
+                    tableSection.appendChild(columnItem);
+                });
+                
+                container.appendChild(tableSection);
+            });
+        }
+
+        function selectColumn(column) {
+            selectedColumn = column;
+            renderColumnList();
+            
+            document.getElementById('selectedColumnTitle').textContent = `Checks für: ${column}`;
+            document.getElementById('checkTypeSelection').style.display = 'block';
+            renderCheckTypes();
+        }
+
+        function renderCheckTypes() {
+            const container = document.getElementById('checkTypeGrid');
+            container.innerHTML = '';
+
+            checkTypes.forEach(type => {
+                const pill = document.createElement('div');
+                pill.className = 'check-type-pill';
+                if (selectedCheckType?.id === type.id) {
+                    pill.classList.add('selected');
+                }
+                pill.onclick = () => selectCheckType(type);
+                pill.textContent = type.name;
+                container.appendChild(pill);
+            });
+        }
+
+        function selectCheckType(type) {
+            selectedCheckType = type;
+            renderCheckTypes();
+            renderCheckParameters();
+        }
+
+        function renderCheckParameters() {
+            const container = document.getElementById('checkParameters');
+            container.innerHTML = '';
+
+            if (!selectedCheckType) return;
+
+            container.innerHTML = '<h4 style="margin-bottom: 15px;">Parameter konfigurieren:</h4>';
+
+            // Criticality selection
+            container.innerHTML += `
+                <div class="form-group">
+                    <label>Kritikalität:</label>
+                    <select id="checkCriticality">
+                        <option value="error">Error - Daten werden blockiert</option>
+                        <option value="warn">Warning - Daten werden markiert</option>
+                    </select>
+                </div>
+            `;
+
+            // Type-specific parameters
+            selectedCheckType.parameters.forEach(param => {
+                if (param === 'allowed' || param === 'forbidden') {
+                    container.innerHTML += `
+                        <div class="form-group">
+                            <label>${param === 'allowed' ? 'Erlaubte Werte:' : 'Verbotene Werte:'}</label>
+                            <div id="${param}Values">
+                                <input type="text" class="${param}-value" placeholder="Wert eingeben">
+                                <button class="btn btn-small btn-secondary" onclick="addValueInput('${param}')" style="margin-top: 5px;">+ Weiterer Wert</button>
+                            </div>
+                        </div>
+                    `;
+                } else if (param === 'limit' || param === 'min' || param === 'max') {
+                    container.innerHTML += `
+                        <div class="form-group">
+                            <label>${param === 'limit' ? 'Grenzwert:' : param === 'min' ? 'Minimum:' : 'Maximum:'}</label>
+                            <input type="number" id="${param}Value" placeholder="Numerischer Wert">
+                        </div>
+                    `;
+                } else if (param === 'pattern') {
+                    container.innerHTML += `
+                        <div class="form-group">
+                            <label>Regex-Muster:</label>
+                            <input type="text" id="patternValue" placeholder="z.B. ^[A-Z]{2}[0-9]{4}$">
+                        </div>
+                    `;
+                } else if (param === 'format') {
+                    container.innerHTML += `
+                        <div class="form-group">
+                            <label>Datumsformat:</label>
+                            <select id="formatValue">
+                                <option value="yyyy-MM-dd">yyyy-MM-dd</option>
+                                <option value="dd.MM.yyyy">dd.MM.yyyy</option>
+                                <option value="MM/dd/yyyy">MM/dd/yyyy</option>
+                            </select>
+                        </div>
+                    `;
+                }
+            });
+
+            // Additional columns for unique check
+            if (selectedCheckType.isDatasetCheck) {
+                container.innerHTML += `
+                    <div class="form-group">
+                        <label>Zusätzliche Spalten für Eindeutigkeit (optional):</label>
+                        <select id="additionalColumns" multiple style="height: 100px;">
+                            ${allColumns.filter(c => c !== selectedColumn).map(col => 
+                                `<option value="${col}">${col}</option>`
+                            ).join('')}
+                        </select>
+                        <small>Strg/Cmd für Mehrfachauswahl</small>
+                    </div>
+                `;
+            }
+        }
+
+        function addValueInput(type) {
+            const container = document.getElementById(`${type}Values`);
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = `${type}-value`;
+            input.placeholder = 'Wert eingeben';
+            input.style.marginTop = '5px';
+            container.insertBefore(input, container.lastElementChild);
+        }
+
+        function addCheckToQueue() {
+            if (!selectedColumn || !selectedCheckType) {
+                showToast('Bitte Spalte und Check-Typ auswählen', 'error');
+                return;
+            }
+
+            const check = {
+                column: selectedColumn,
+                type: selectedCheckType,
+                criticality: document.getElementById('checkCriticality').value,
+                parameters: {}
+            };
+
+            // Collect parameters
+            selectedCheckType.parameters.forEach(param => {
+                if (param === 'allowed' || param === 'forbidden') {
+                    const values = Array.from(document.querySelectorAll(`.${param}-value`))
+                        .map(input => input.value.trim())
+                        .filter(v => v !== '');
+                    if (values.length > 0) {
+                        check.parameters[param] = values.map(v => {
+                            const num = Number(v);
+                            return isNaN(num) ? v : num;
+                        });
+                    }
+                } else {
+                    const input = document.getElementById(`${param}Value`);
+                    if (input && input.value) {
+                        check.parameters[param] = param.includes('limit') || param === 'min' || param === 'max' 
+                            ? Number(input.value) 
+                            : input.value;
+                    }
+                }
+            });
+
+            // Handle unique check with multiple columns
+            if (selectedCheckType.isDatasetCheck) {
+                const additionalCols = document.getElementById('additionalColumns');
+                if (additionalCols) {
+                    const selected = Array.from(additionalCols.selectedOptions).map(opt => opt.value);
+                    check.columns = [selectedColumn, ...selected];
+                    delete check.column;
+                }
+            }
+
+            queuedChecks.push(check);
+            renderQueuedChecks();
+            
+            // Reset selection
+            selectedCheckType = null;
+            renderCheckTypes();
+            renderCheckParameters();
+            
+            showToast('Check erfolgreich hinzugefügt', 'success');
+        }
+
+        function renderQueuedChecks() {
+            const container = document.getElementById('queuedChecks');
+            const count = document.getElementById('checkCount');
+            count.textContent = queuedChecks.length;
+
+            if (queuedChecks.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">Noch keine Checks erstellt</p>';
+                document.getElementById('step2NextBtn').disabled = true;
+                return;
+            }
+
+            document.getElementById('step2NextBtn').disabled = false;
+            container.innerHTML = '';
+
+            queuedChecks.forEach((check, index) => {
+                const checkItem = document.createElement('div');
+                checkItem.className = 'queued-check';
+                checkItem.innerHTML = `
+                    <div class="queued-check-info">
+                        <div class="queued-check-title">
+                            ${check.type.name} - ${check.columns ? check.columns.join(', ') : check.column}
+                        </div>
+                        <div class="queued-check-details">
+                            Kritikalität: ${check.criticality.toUpperCase()} | 
+                            ${Object.keys(check.parameters).length > 0 
+                                ? `Parameter: ${JSON.stringify(check.parameters)}` 
+                                : 'Keine Parameter'}
+                        </div>
+                    </div>
+                    <button class="btn btn-small btn-secondary" onclick="removeQueuedCheck(${index})">
+                        Entfernen
+                    </button>
+                `;
+                container.appendChild(checkItem);
+            });
+        }
+
+        function removeQueuedCheck(index) {
+            queuedChecks.splice(index, 1);
+            renderQueuedChecks();
+            showToast('Check entfernt', 'warning');
+        }
+
+        // Metadata validation
+        function validateMetadataAndNext() {
+            const required = [
+                'dataDomain', 'businessProcess', 'qualityGoal', 
+                'errorImpact', 'dataSteward', 'department'
+            ];
+
+            for (const field of required) {
+                const value = document.getElementById(field).value.trim();
+                if (!value) {
+                    showToast(`Bitte füllen Sie alle Pflichtfelder aus`, 'error');
+                    return;
+                }
+            }
+
+            const email = document.getElementById('dataSteward').value;
+            if (!validateEmail(email)) {
+                showToast('Bitte geben Sie eine gültige E-Mail-Adresse ein', 'error');
+                return;
+            }
+
+            collectMetadata();
+            nextStep();
+        }
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function collectMetadata() {
+            metadata = {
+                dataDomain: document.getElementById('dataDomain').value,
+                businessProcess: document.getElementById('businessProcess').value,
+                qualityGoal: document.getElementById('qualityGoal').value,
+                errorImpact: document.getElementById('errorImpact').value,
+                dataSteward: document.getElementById('dataSteward').value,
+                technicalContact: document.getElementById('technicalContact').value,
+                department: document.getElementById('department').value,
+                costCenter: document.getElementById('costCenter').value,
+                sla: document.getElementById('sla').value,
+                checkFrequency: document.getElementById('checkFrequency').value,
+                runConfigName: document.getElementById('runConfigName').value || 'default',
+                notificationLevel: document.getElementById('notificationLevel').value
+            };
+        }
+
+        // Visualization functions
+        function renderVisualization() {
+            updateStatistics();
+            renderCheckMatrix();
+            renderDetailedList();
+            renderDetailView();
+            renderCoverageAnalysis();
+            populateFilters();
+        }
+
+        function updateStatistics() {
+            document.getElementById('totalChecksCount').textContent = queuedChecks.length;
+            document.getElementById('errorChecksCount').textContent = 
+                queuedChecks.filter(c => c.criticality === 'error').length;
+            document.getElementById('warnChecksCount').textContent = 
+                queuedChecks.filter(c => c.criticality === 'warn').length;
+            
+            const coveredColumns = new Set();
+            queuedChecks.forEach(check => {
+                if (check.columns) {
+                    check.columns.forEach(col => coveredColumns.add(col));
+                } else {
+                    coveredColumns.add(check.column);
+                }
+            });
+            document.getElementById('coveredColumnsCount').textContent = coveredColumns.size;
+        }
+
+        function renderCheckMatrix() {
+            const matrix = document.getElementById('checkMatrix');
+            
+            // Group checks by column
+            const checksByColumn = {};
+            queuedChecks.forEach(check => {
+                const cols = check.columns || [check.column];
+                cols.forEach(col => {
+                    if (!checksByColumn[col]) {
+                        checksByColumn[col] = [];
+                    }
+                    checksByColumn[col].push(check);
+                });
+            });
+
+            // Create matrix
+            let html = '<thead><tr><th>Spalte</th><th>Tabelle</th>';
+            const uniqueCheckTypes = [...new Set(queuedChecks.map(c => c.type.name))];
+            uniqueCheckTypes.forEach(type => {
+                html += `<th>${type}</th>`;
+            });
+            html += '<th>Gesamt</th></tr></thead><tbody>';
+
+            Object.keys(checksByColumn).sort().forEach(col => {
+                const [table, field] = col.split('-');
+                html += `<tr><td><strong>${field}</strong></td><td>${table}</td>`;
+                
+                uniqueCheckTypes.forEach(typeName => {
+                    const checksOfType = checksByColumn[col].filter(c => c.type.name === typeName);
+                    if (checksOfType.length > 0) {
+                        const indicators = checksOfType.map(c => 
+                            `<span class="check-indicator ${c.criticality}">${c.criticality === 'error' ? 'E' : 'W'}</span>`
+                        ).join(' ');
+                        html += `<td class="check-cell">${indicators}</td>`;
+                    } else {
+                        html += '<td class="check-cell">-</td>';
+                    }
+                });
+                
+                html += `<td class="check-cell"><strong>${checksByColumn[col].length}</strong></td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody>';
+            matrix.innerHTML = html;
+        }
+
+        function renderDetailedList() {
+            const container = document.getElementById('detailedCheckList');
+            let html = '';
+
+            // Group by table
+            const checksByTable = {};
+            queuedChecks.forEach(check => {
+                const cols = check.columns || [check.column];
+                cols.forEach(col => {
+                    const [table] = col.split('-');
+                    if (!checksByTable[table]) {
+                        checksByTable[table] = [];
+                    }
+                    checksByTable[table].push({ ...check, column: col });
+                });
+            });
+
+            Object.keys(checksByTable).sort().forEach(table => {
+                html += `<h4 style="margin: 20px 0 10px; color: var(--primary);">📊 ${table}</h4>`;
+                checksByTable[table].forEach(check => {
+                    const [, field] = check.column.split('-');
+                    html += `
+                        <div style="padding: 10px; margin-bottom: 10px; background: #f9f9f9; border-radius: 6px; border-left: 4px solid ${check.criticality === 'error' ? 'var(--error)' : 'var(--warning)'};">
+                            <strong>${field}</strong> - ${check.type.name}
+                            <span style="float: right; color: ${check.criticality === 'error' ? 'var(--error)' : 'var(--warning)'};">${check.criticality.toUpperCase()}</span>
+                            ${Object.keys(check.parameters).length > 0 
+                                ? `<div style="margin-top: 5px; font-size: 0.85rem; color: var(--text-secondary);">Parameter: ${JSON.stringify(check.parameters)}</div>`
+                                : ''}
+                        </div>
+                    `;
+                });
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderDetailView() {
+            const container = document.getElementById('checkDetailView');
+            const groupBy = document.getElementById('groupBySelect')?.value || 'column';
+            
+            // Create detailed check objects with all metadata
+            const detailedChecks = queuedChecks.map((check, index) => {
+                const cols = check.columns || [check.column];
+                return cols.map(col => ({
+                    ...check,
+                    column: col,
+                    index: index,
+                    table: col.split('-')[0],
+                    field: col.split('-')[1],
+                    metadata: metadata
+                }));
+            }).flat();
+
+            // Group checks
+            const groups = {};
+            detailedChecks.forEach(check => {
+                let groupKey;
+                switch(groupBy) {
+                    case 'column':
+                        groupKey = check.column;
+                        break;
+                    case 'type':
+                        groupKey = check.type.name;
+                        break;
+                    case 'criticality':
+                        groupKey = check.criticality.toUpperCase();
+                        break;
+                    case 'table':
+                        groupKey = check.table;
+                        break;
+                    default:
+                        groupKey = check.column;
+                }
+                
+                if (!groups[groupKey]) {
+                    groups[groupKey] = [];
+                }
+                groups[groupKey].push(check);
+            });
+
+            let html = '';
+            Object.keys(groups).sort().forEach(group => {
+                html += `
+                    <div class="group-header">
+                        <span>${group}</span>
+                        <span class="group-count">${groups[group].length} Check${groups[group].length > 1 ? 's' : ''}</span>
+                    </div>
+                `;
+
+                groups[group].forEach((check, idx) => {
+                    const checkId = `check-${group}-${idx}`.replace(/[^a-zA-Z0-9-]/g, '_');
+                    html += `
+                        <div class="detail-card">
+                            <div class="detail-card-header ${check.criticality}" onclick="toggleDetailCard('${checkId}')">
+                                <div class="detail-card-title">
+                                    <span class="detail-card-icon">${check.type.category === 'completeness' ? '✓' : 
+                                                                      check.type.category === 'validity' ? '🔍' : 
+                                                                      check.type.category === 'uniqueness' ? '🔑' : '📊'}</span>
+                                    <div class="detail-card-main">
+                                        <div class="detail-card-name">${check.type.name} - ${check.field}</div>
+                                        <div class="detail-card-subtitle">Tabelle: ${check.table} | Funktion: ${check.type.id}</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center;">
+                                    <span class="detail-card-badge ${check.criticality}">${check.criticality.toUpperCase()}</span>
+                                    <span class="detail-card-expand" id="expand-${checkId}">▼</span>
+                                </div>
+                            </div>
+                            <div class="detail-card-body" id="body-${checkId}">
+                                <div class="detail-section">
+                                    <div class="detail-section-title">
+                                        <span>⚙️</span> Check-Konfiguration
+                                    </div>
+                                    <div class="detail-grid">
+                                        <div class="detail-item">
+                                            <span class="detail-label">Check-Funktion</span>
+                                            <span class="detail-value">${check.type.id}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Kategorie</span>
+                                            <span class="detail-value">${check.type.category}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Kritikalität</span>
+                                            <span class="detail-value">${check.criticality === 'error' ? 'Error - Blockierend' : 'Warning - Markierend'}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Spalte(n)</span>
+                                            <span class="detail-value">${check.columns ? check.columns.join(', ') : check.column}</span>
+                                        </div>
+                                    </div>
+                                    ${Object.keys(check.parameters).length > 0 ? `
+                                        <div class="detail-code">
+                                            <strong>Parameter:</strong><br>
+                                            ${JSON.stringify(check.parameters, null, 2)}
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                <div class="detail-section">
+                                    <div class="detail-section-title">
+                                        <span>📝</span> Geschäftskontext
+                                    </div>
+                                    <div class="detail-grid">
+                                        <div class="detail-item">
+                                            <span class="detail-label">Datendomäne</span>
+                                            <span class="detail-value">${check.metadata.dataDomain || 'N/A'}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Geschäftsprozess</span>
+                                            <span class="detail-value">${check.metadata.businessProcess || 'N/A'}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Qualitätsziel</span>
+                                            <span class="detail-value">${check.metadata.qualityGoal || 'N/A'}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Fehler-Auswirkung</span>
+                                            <span class="detail-value">${check.metadata.errorImpact || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="detail-section">
+                                    <div class="detail-section-title">
+                                        <span>👥</span> Verantwortlichkeiten
+                                    </div>
+                                    <div class="detail-grid">
+                                        <div class="detail-item">
+                                            <span class="detail-label">Data Steward</span>
+                                            <span class="detail-value">${check.metadata.dataSteward || 'N/A'}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Technischer Kontakt</span>
+                                            <span class="detail-value">${check.metadata.technicalContact || 'N/A'}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Abteilung</span>
+                                            <span class="detail-value">${check.metadata.department || 'N/A'}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Kostenstelle</span>
+                                            <span class="detail-value">${check.metadata.costCenter || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                ${(check.metadata.sla || check.metadata.checkFrequency || check.metadata.notificationLevel) ? `
+                                    <div class="detail-section">
+                                        <div class="detail-section-title">
+                                            <span>📊</span> Technische Details
+                                        </div>
+                                        <div class="detail-grid">
+                                            ${check.metadata.sla ? `
+                                                <div class="detail-item">
+                                                    <span class="detail-label">SLA</span>
+                                                    <span class="detail-value">${check.metadata.sla}%</span>
+                                                </div>
+                                            ` : ''}
+                                            ${check.metadata.checkFrequency ? `
+                                                <div class="detail-item">
+                                                    <span class="detail-label">Prüffrequenz</span>
+                                                    <span class="detail-value">${check.metadata.checkFrequency}</span>
+                                                </div>
+                                            ` : ''}
+                                            ${check.metadata.notificationLevel ? `
+                                                <div class="detail-item">
+                                                    <span class="detail-label">Benachrichtigung</span>
+                                                    <span class="detail-value">${check.metadata.notificationLevel}</span>
+                                                </div>
+                                            ` : ''}
+                                            <div class="detail-item">
+                                                <span class="detail-label">Run Config</span>
+                                                <span class="detail-value">${check.metadata.runConfigName || 'default'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ` : ''}
+
+                                <div class="detail-actions">
+                                    <button class="btn btn-small btn-primary" onclick="exportSingleCheck(${check.index})">
+                                        📥 Einzeln exportieren
+                                    </button>
+                                    <button class="btn btn-small btn-secondary" onclick="copyCheckToClipboard(${check.index})">
+                                        📋 JSON kopieren
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+
+            container.innerHTML = html || '<p style="text-align: center; color: var(--text-secondary);">Keine Checks vorhanden</p>';
+        }
+
+        function toggleDetailCard(checkId) {
+            const body = document.getElementById(`body-${checkId}`);
+            const expand = document.getElementById(`expand-${checkId}`);
+            
+            if (body.classList.contains('expanded')) {
+                body.classList.remove('expanded');
+                expand.classList.remove('expanded');
+            } else {
+                body.classList.add('expanded');
+                expand.classList.add('expanded');
+            }
+        }
+
+        function filterDetailView() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.detail-card');
+            
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Update group headers
+            document.querySelectorAll('.group-header').forEach(header => {
+                const nextCard = header.nextElementSibling;
+                if (!nextCard || nextCard.style.display === 'none') {
+                    header.style.display = 'none';
+                } else {
+                    header.style.display = 'flex';
+                }
+            });
+        }
+
+        function exportSingleCheck(index) {
+            const check = queuedChecks[index];
+            const dqxCheck = generateSingleCheckJSON(check);
+            
+            const dataStr = JSON.stringify([dqxCheck], null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `dqx_check_${check.type.id}_${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showToast('Check wurde exportiert!', 'success');
+        }
+
+        function copyCheckToClipboard(index) {
+            const check = queuedChecks[index];
+            const dqxCheck = generateSingleCheckJSON(check);
+            const jsonString = JSON.stringify(dqxCheck, null, 2);
+            
+            navigator.clipboard.writeText(jsonString).then(() => {
+                showToast('Check-JSON wurde kopiert!', 'success');
+            }).catch(() => {
+                showToast('Kopieren fehlgeschlagen', 'error');
+            });
+        }
+
+        function generateSingleCheckJSON(check) {
+            const dqxCheck = {
+                criticality: check.criticality,
+                check: {
+                    function: check.type.id,
+                    arguments: {}
+                },
+                user_metadata: {
+                    description: `${metadata.qualityGoal} für ${metadata.businessProcess}`,
+                    responsible_data_steward: metadata.dataSteward,
+                    data_domain: metadata.dataDomain,
+                    business_process: metadata.businessProcess,
+                    quality_goal: metadata.qualityGoal,
+                    error_impact: metadata.errorImpact,
+                    department: metadata.department
+                }
+            };
+
+            // Add optional metadata
+            if (metadata.technicalContact) {
+                dqxCheck.user_metadata.technical_contact = metadata.technicalContact;
+            }
+            if (metadata.costCenter) {
+                dqxCheck.user_metadata.cost_center = metadata.costCenter;
+            }
+            if (metadata.sla) {
+                dqxCheck.user_metadata.sla = metadata.sla;
+            }
+            if (metadata.checkFrequency) {
+                dqxCheck.user_metadata.check_frequency = metadata.checkFrequency;
+            }
+            if (metadata.notificationLevel) {
+                dqxCheck.user_metadata.notification_level = metadata.notificationLevel;
+            }
+
+            dqxCheck.run_config_name = metadata.runConfigName;
+
+            // Handle columns
+            if (check.columns) {
+                dqxCheck.check.arguments.columns = check.columns;
+            } else {
+                dqxCheck.check.arguments.column = check.column;
+            }
+
+            // Add parameters
+            Object.assign(dqxCheck.check.arguments, check.parameters);
+
+            return dqxCheck;
+        }
+
+        function renderCoverageAnalysis() {
+            const container = document.getElementById('coverageAnalysis');
+            
+            const coveredColumns = new Set();
+            queuedChecks.forEach(check => {
+                if (check.columns) {
+                    check.columns.forEach(col => coveredColumns.add(col));
+                } else {
+                    coveredColumns.add(check.column);
+                }
+            });
+
+            const uncoveredColumns = allColumns.filter(col => !coveredColumns.has(col));
+            const coveragePercent = Math.round((coveredColumns.size / allColumns.length) * 100);
+
+            let html = `
+                <div class="progress-bar" style="margin-bottom: 30px;">
+                    <div class="progress-fill" style="width: ${coveragePercent}%;"></div>
+                </div>
+                <p style="font-size: 1.2rem; margin-bottom: 20px;">
+                    <strong>${coveragePercent}%</strong> der Spalten haben mindestens einen Check
+                </p>
+            `;
+
+            if (uncoveredColumns.length > 0) {
+                html += `
+                    <h4 style="color: var(--warning); margin-top: 30px;">⚠️ Spalten ohne Checks:</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
+                `;
+                uncoveredColumns.forEach(col => {
+                    html += `<span style="padding: 5px 10px; background: #fff3e0; border-radius: 15px; font-size: 0.85rem;">${col}</span>`;
+                });
+                html += '</div>';
+            }
+
+            // Check type distribution
+            const checkTypeCounts = {};
+            queuedChecks.forEach(check => {
+                const typeName = check.type.name;
+                checkTypeCounts[typeName] = (checkTypeCounts[typeName] || 0) + 1;
+            });
+
+            html += `
+                <h4 style="margin-top: 30px;">📊 Check-Typ Verteilung:</h4>
+                <div style="margin-top: 15px;">
+            `;
+            Object.entries(checkTypeCounts).forEach(([type, count]) => {
+                const percent = Math.round((count / queuedChecks.length) * 100);
+                html += `
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>${type}</span>
+                            <span>${count} (${percent}%)</span>
+                        </div>
+                        <div class="progress-bar" style="height: 8px;">
+                            <div class="progress-fill" style="width: ${percent}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        function populateFilters() {
+            // Table filter
+            const tables = [...new Set(allColumns.map(col => col.split('-')[0]))];
+            const tableFilter = document.getElementById('tableFilter');
+            tableFilter.innerHTML = '<option value="">Alle Tabellen</option>';
+            tables.forEach(table => {
+                tableFilter.innerHTML += `<option value="${table}">${table}</option>`;
+            });
+
+            // Check type filter
+            const types = [...new Set(queuedChecks.map(c => c.type.id))];
+            const typeFilter = document.getElementById('checkTypeFilter');
+            typeFilter.innerHTML = '<option value="">Alle Check-Typen</option>';
+            types.forEach(typeId => {
+                const type = checkTypes.find(t => t.id === typeId);
+                typeFilter.innerHTML += `<option value="${typeId}">${type.name}</option>`;
+            });
+        }
+
+        function applyFilters() {
+            // For simplicity, we'll just re-render the matrix
+            // In a real app, you'd filter the data
+            renderCheckMatrix();
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
+
+        function goBackToCheckBuilder() {
+            currentStep = 2;
+            updateWizardSteps();
+        }
+
+        // Export functions
+        function generateJSON() {
+            const checks = queuedChecks.map(check => {
+                const dqxCheck = {
+                    criticality: check.criticality,
+                    check: {
+                        function: check.type.id,
+                        arguments: {}
+                    },
+                    user_metadata: {
+                        description: `${metadata.qualityGoal} für ${metadata.businessProcess}`,
+                        responsible_data_steward: metadata.dataSteward,
+                        data_domain: metadata.dataDomain,
+                        business_process: metadata.businessProcess,
+                        quality_goal: metadata.qualityGoal,
+                        error_impact: metadata.errorImpact,
+                        department: metadata.department
+                    }
+                };
+
+                // Add optional metadata
+                if (metadata.technicalContact) {
+                    dqxCheck.user_metadata.technical_contact = metadata.technicalContact;
+                }
+                if (metadata.costCenter) {
+                    dqxCheck.user_metadata.cost_center = metadata.costCenter;
+                }
+                if (metadata.sla) {
+                    dqxCheck.user_metadata.sla = metadata.sla;
+                }
+                if (metadata.checkFrequency) {
+                    dqxCheck.user_metadata.check_frequency = metadata.checkFrequency;
+                }
+                if (metadata.notificationLevel) {
+                    dqxCheck.user_metadata.notification_level = metadata.notificationLevel;
+                }
+
+                // Add run config
+                dqxCheck.run_config_name = metadata.runConfigName;
+
+                // Handle columns
+                if (check.columns) {
+                    dqxCheck.check.arguments.columns = check.columns;
+                } else {
+                    dqxCheck.check.arguments.column = check.column;
+                }
+
+                // Add parameters
+                Object.assign(dqxCheck.check.arguments, check.parameters);
+
+                return dqxCheck;
+            });
+
+            return checks;
+        }
+
+        function updateExportView() {
+            document.getElementById('finalCheckCount').textContent = queuedChecks.length;
+            
+            const summary = document.getElementById('checkSummary');
+            summary.innerHTML = `
+                <div class="description-grid">
+                    <div>
+                        <strong>Datendomäne:</strong> ${metadata.dataDomain}
+                    </div>
+                    <div>
+                        <strong>Geschäftsprozess:</strong> ${metadata.businessProcess}
+                    </div>
+                    <div>
+                        <strong>Data Steward:</strong> ${metadata.dataSteward}
+                    </div>
+                    <div>
+                        <strong>Abteilung:</strong> ${metadata.department}
+                    </div>
+                </div>
+            `;
+
+            const jsonData = generateJSON();
+            document.getElementById('jsonPreview').textContent = JSON.stringify(jsonData, null, 2);
+        }
+
+        function exportJSON() {
+            const jsonData = generateJSON();
+            const dataStr = JSON.stringify(jsonData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `dqx_checks_${metadata.businessProcess.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showToast('JSON-Datei wurde erfolgreich exportiert!', 'success');
+        }
+
+        function copyToClipboard() {
+            const jsonData = generateJSON();
+            const jsonString = JSON.stringify(jsonData, null, 2);
+            
+            navigator.clipboard.writeText(jsonString).then(() => {
+                showToast('JSON wurde in die Zwischenablage kopiert!', 'success');
+            }).catch(() => {
+                showToast('Kopieren fehlgeschlagen', 'error');
+            });
+        }
+
+        function startNew() {
+            if (confirm('Möchten Sie wirklich neu beginnen? Alle erstellten Checks gehen verloren.')) {
+                location.reload();
+            }
+        }
+
+        // Navigation
+        function nextStep() {
+            if (currentStep === 2 && queuedChecks.length === 0) {
+                showToast('Bitte erstellen Sie mindestens einen Check', 'error');
+                return;
+            }
+
+            if (currentStep < 5) {
+                currentStep++;
+                updateWizardSteps();
+
+                if (currentStep === 2) {
+                    renderColumnList();
+                } else if (currentStep === 4) {
+                    renderVisualization();
+                } else if (currentStep === 5) {
+                    updateExportView();
+                }
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateWizardSteps();
+            }
+        }
+
+        function updateWizardSteps() {
+            document.querySelectorAll('.step').forEach(step => {
+                const stepNum = parseInt(step.dataset.step);
+                step.classList.remove('active', 'completed');
+                
+                if (stepNum === currentStep) {
+                    step.classList.add('active');
+                } else if (stepNum < currentStep) {
+                    step.classList.add('completed');
+                }
+            });
+
+            document.querySelectorAll('.step-content').forEach(content => {
+                const stepNum = parseInt(content.dataset.step);
+                content.classList.toggle('active', stepNum === currentStep);
+            });
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span>${type === 'success' ? '✓' : type === 'error' ? '✗' : '⚠'}</span>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
